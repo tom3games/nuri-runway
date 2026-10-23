@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ぬりぬりランウェイ</title>
+<meta name="description" content="マネキンをぬって服を作り、ランウェイへ。3人の審査員が採点し、点が低いと観客からトマトが飛んでくる。ブラウザで遊べるお絵かきファッションショー。">
+<meta name="theme-color" content="#1a0b24">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ぬりぬりランウェイ">
+<meta property="og:description" content="マネキンをぬってランウェイへ。点が低いとトマトが飛んでくる。">
+<meta property="og:image" content="https://tom3games.github.io/nuri-runway/og.png">
+<meta property="og:url" content="https://tom3games.github.io/nuri-runway/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='14' r='9' fill='%23ff4f9a'/%3E%3Cpath d='M18 26h28l-4 20H22z' fill='%23f5c84c'/%3E%3Cpath d='M22 46h20l-2 14h-6l-2-10-2 10h-6z' fill='%235b3df5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --night:#1a0b24;--plum:#3a1450;--paper:#fff6ee;--paper-dim:#ecdccd;--ink:#1d1424;
+  --pink:#ff4f9a;--pink-dk:#a3185a;--gold:#f5c84c;--gold-dk:#9a7414;--violet:#5b3df5;--violet-dk:#2c1a8f;
+  --disp:'Dela Gothic One',sans-serif;
+}
+html{background:var(--night)}
+html,body{min-height:100%;color:var(--paper);
+  font-family:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif;-webkit-tap-highlight-color:transparent;
+  word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere}
+body{min-height:100svh;overflow-x:hidden;background:transparent}
+button{font-family:inherit;color:inherit;font-size:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+
+/* ---------- 会場の背景（全画面共通） */
+#stage{position:fixed;inset:0;z-index:-1;overflow:hidden;background:radial-gradient(120% 80% at 50% -10%,#5a1f6e 0%,#2a0f3a 45%,#1a0b24 100%)}
+#stage .curtain{position:absolute;top:0;bottom:0;width:22vw;max-width:220px;
+  background:repeating-linear-gradient(90deg,#6b0f2e 0 18px,#8f1a40 18px 30px,#5a0b26 30px 44px);box-shadow:inset -30px 0 40px rgba(0,0,0,.55)}
+#stage .curtain.l{left:0;border-radius:0 0 60% 0/0 0 18% 0}
+#stage .curtain.r{right:0;transform:scaleX(-1);border-radius:0 0 60% 0/0 0 18% 0}
+#stage .valance{position:absolute;left:0;right:0;top:0;height:46px;background:
+  radial-gradient(circle at 30px -6px,#a32050 30px,transparent 31px) 0 0/60px 46px repeat-x;filter:drop-shadow(0 6px 6px rgba(0,0,0,.4))}
+#stage .beam{position:absolute;top:-10%;width:40vmax;height:120vh;transform-origin:50% 0;mix-blend-mode:screen;filter:blur(10px);
+  clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:swing 11s ease-in-out infinite alternate}
+#stage .b1{left:-6vmax;background:linear-gradient(rgba(255,120,190,.30),transparent 70%);--a:-16deg;--b:10deg}
+#stage .b2{right:-6vmax;background:linear-gradient(rgba(140,170,255,.28),transparent 70%);--a:16deg;--b:-10deg;animation-delay:-4s}
+#stage .b3{left:calc(50% - 20vmax);background:linear-gradient(rgba(255,220,140,.18),transparent 60%);--a:-8deg;--b:8deg;animation-duration:15s}
+@keyframes swing{from{transform:rotate(var(--a))}to{transform:rotate(var(--b))}}
+#stage .floor{position:absolute;left:50%;bottom:-4%;width:min(70vw,620px);height:42%;transform:translateX(-50%) perspective(420px) rotateX(55deg);transform-origin:50% 100%;
+  background:linear-gradient(90deg,transparent 0,rgba(255,255,255,.08) 49%,rgba(255,255,255,.08) 51%,transparent 100%),linear-gradient(#f2e6ff22,#ffffff10),
+  repeating-linear-gradient(0deg,rgba(255,79,154,.22) 0 3px,transparent 3px 46px);border-left:3px solid rgba(245,200,76,.6);border-right:3px solid rgba(245,200,76,.6)}
+#stage .crowd{position:absolute;left:0;right:0;bottom:0;width:100%;height:clamp(50px,10vh,96px);z-index:1}
+body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
+@keyframes cheer{to{transform:translateY(-6px)}}
+
+/* ---------- 共通 */
+.view{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:max(64px,calc(env(safe-area-inset-top) + 56px)) 16px max(24px,calc(env(safe-area-inset-bottom) + 16px));gap:16px}
+.wrap{width:min(540px,100%);display:flex;flex-direction:column;align-items:center;gap:16px}
+.view:not([hidden]) .wrap{animation:enter .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;font-size:18px;letter-spacing:.05em;border:0;border-radius:16px;min-height:56px;padding:0 22px;cursor:pointer;width:100%;
+  background:var(--paper);color:var(--ink);box-shadow:0 5px 0 #b8a796,0 10px 18px rgba(0,0,0,.25);transition:transform .07s,box-shadow .07s,filter .15s}
+.btn::before{content:"";position:absolute;left:8px;right:8px;top:4px;height:44%;border-radius:12px 12px 40% 40%/12px 12px 14px 14px;background:linear-gradient(rgba(255,255,255,.42),rgba(255,255,255,0));pointer-events:none}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #b8a796,0 3px 8px rgba(0,0,0,.25)}
+@media (hover:hover){.btn:hover{filter:brightness(1.07)}}
+.btn svg{width:24px;height:24px;flex:none;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn.pink{background:linear-gradient(#ff72b0,var(--pink));color:#fff;box-shadow:0 6px 0 var(--pink-dk),0 12px 22px rgba(255,79,154,.35);font-size:21px;min-height:64px}
+.btn.pink:active{box-shadow:0 1px 0 var(--pink-dk)}
+.btn.gold{background:linear-gradient(#ffdb73,var(--gold));color:var(--ink);box-shadow:0 6px 0 var(--gold-dk),0 12px 22px rgba(245,200,76,.25)}
+.btn.gold:active{box-shadow:0 1px 0 var(--gold-dk)}
+.btn.ghost{background:rgba(26,11,36,.55);color:var(--paper);box-shadow:inset 0 0 0 2px rgba(255,246,238,.38);font-size:16px;min-height:50px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.btn.ghost::before{display:none}
+.btn.ghost:active{transform:translateY(2px)}
+.row{display:flex;gap:12px;width:100%}
+.row>.btn{flex:1}
+
+/* 右上の小ボタン */
+#corner{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));z-index:50;display:flex;gap:8px}
+#corner button{height:40px;min-width:44px;padding:0 12px;border-radius:12px;border:0;background:rgba(26,11,36,.7);box-shadow:inset 0 0 0 2px rgba(255,246,238,.3);font-weight:900;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+#corner svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- タイトル */
+#vTitle{justify-content:center}
+.logo{text-align:center;line-height:1}
+.logo .main{font-family:var(--disp);font-size:clamp(40px,11.5vw,74px);letter-spacing:.02em;color:#fff;
+  text-shadow:0 4px 0 var(--pink-dk),0 0 24px rgba(255,79,154,.6);display:block}
+.logo .main b{color:var(--gold);font-weight:400;white-space:nowrap}
+.logo .sub{display:inline-block;margin-top:12px;font-weight:900;font-size:clamp(14px,4vw,18px);padding:6px 14px;border-radius:99px;background:var(--pink);color:#fff;box-shadow:0 3px 0 var(--pink-dk)}
+.heroBox{position:relative;width:min(300px,62vw);aspect-ratio:300/430}
+.heroBox canvas{width:100%;height:100%;display:block}
+.mcLine{display:flex;gap:10px;align-items:flex-start;width:100%}
+.mcLine .mcFace{flex:none;width:52px;height:52px}
+.bubble{position:relative;background:var(--paper);color:var(--ink);border-radius:16px;padding:12px 14px;font-weight:700;font-size:15px;line-height:1.6;box-shadow:0 4px 0 #b8a796}
+.bubble small{display:block;font-size:12px;color:var(--pink-dk);font-weight:900;margin-bottom:2px}
+.bubble::before{content:"";position:absolute;left:-8px;top:18px;border:8px solid transparent;border-right-color:var(--paper);border-left:0}
+
+/* ---------- お題 */
+.themeCard{width:100%;background:var(--paper);color:var(--ink);border-radius:22px;padding:22px 18px 20px;text-align:center;box-shadow:0 8px 0 #b8a796,0 18px 30px rgba(0,0,0,.35);position:relative}
+.themeCard .lab{display:inline-block;font-weight:900;font-size:14px;padding:4px 14px;border-radius:99px;background:var(--violet);color:#fff;margin-bottom:10px}
+.themeCard .name{font-family:var(--disp);font-size:clamp(30px,9vw,46px);line-height:1.25;color:var(--pink-dk)}
+.themeCard .kw{margin-top:10px;font-weight:700;color:#5c4a5f}
+.themeCard.spin .name{animation:spin .09s linear infinite}
+@keyframes spin{0%{transform:translateY(-6px);opacity:.4}50%{opacity:1}100%{transform:translateY(6px);opacity:.4}}
+
+/* ---------- ぬり画面 */
+#vPaint{padding:max(54px,calc(env(safe-area-inset-top) + 50px)) 8px max(8px,calc(env(safe-area-inset-bottom) + 6px));gap:6px;height:100svh;min-height:0}
+.pGrid{width:100%;max-width:1100px;flex:1;min-height:0;display:grid;gap:6px;
+  grid-template-columns:1fr auto;grid-template-rows:auto minmax(0,1fr) auto auto auto;
+  grid-template-areas:"head head" "canvas rail" "parts parts" "pal pal" "go go"}
+.pLeft,.pSide{display:contents}
+.pHead{grid-area:head;display:flex;align-items:center;gap:6px 8px;justify-content:center;flex-wrap:wrap;text-align:center}
+.pHead .chip{font-weight:900;background:var(--violet);border-radius:99px;padding:3px 12px;font-size:12px}
+.pHead .tname{font-family:var(--disp);font-size:clamp(18px,5vw,26px);color:var(--gold);line-height:1.2}
+.pHead .kw{width:100%;font-size:12px;color:#d9c3e0;font-weight:700}
+.pCanvasBox{grid-area:canvas;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
+#paint{touch-action:none;display:block;border-radius:18px;background:radial-gradient(circle at 50% 30%,#fffaf4,#f1e3d6);box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 0 0 3px rgba(255,255,255,.6);cursor:crosshair}
+.parts{grid-area:parts;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.parts .pt{background:rgba(255,246,238,.1);border-radius:10px;padding:5px 2px 6px;text-align:center;font-size:11px;font-weight:900;border:2px solid transparent;cursor:pointer;color:var(--paper);min-height:40px}
+.parts .pt.on{border-color:var(--gold);background:rgba(245,200,76,.18)}
+.parts .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin:4px 4px 0;overflow:hidden}
+.parts .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--gold));transition:width .25s}
+.parts .pt.full .bar i{background:#6ee08a}
+/* 縦持ち: 道具はキャンバスの右に縦2列 */
+.tools{grid-area:rail;display:grid;grid-template-columns:repeat(2,46px);gap:4px;align-content:center}
+.tools .tg{display:contents}
+.tool{min-width:0;width:100%;height:46px;border-radius:10px;border:0;background:rgba(255,246,238,.08);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:900;gap:1px;color:var(--paper);padding:0 2px;line-height:1.1}
+.tool svg{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tool.on{background:var(--paper);color:var(--ink)}
+.tool:disabled{opacity:.35}
+.tools .sep{grid-column:1/-1;height:2px;background:rgba(255,246,238,.15);border-radius:1px;align-self:center}
+.pal{grid-area:pal;display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.sw{height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);cursor:pointer;position:relative;justify-self:center;width:34px}
+.sw.on{border-color:#fff;box-shadow:0 0 0 3px var(--pink)}
+.sw.on::after{content:"";position:absolute;inset:30%;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+#bRunway{grid-area:go;min-height:52px}
+@media (max-height:700px){.pHead .kw{display:none}.sw{width:30px;height:30px}#bRunway{min-height:46px;font-size:18px}}
+/* 横持ち・PC: 右にパネル */
+@media (min-aspect-ratio:1/1) and (min-width:700px){
+  .pGrid{display:flex;flex-direction:row;align-items:stretch;gap:12px}
+  .pLeft{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px}
+  .pCanvasBox{flex:1}
+  .pSide{align-self:center;display:flex;flex-direction:column;justify-content:center;gap:8px;width:360px;max-height:100%;flex:none;background:rgba(26,11,36,.55);border-radius:18px;padding:12px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);min-height:0}
+  .tools{display:flex;gap:4px;grid-template-columns:none}
+  .tools{flex-wrap:wrap}
+  .tools .tg{display:flex;gap:3px;flex:auto}
+  .tools .tg.sub{order:5;flex-basis:100%;justify-content:center}
+  .tools .tg.sub .tool{flex:0 1 80px;flex-direction:row;gap:6px;font-size:11px}
+  .tool span{white-space:nowrap}
+  .tools .sep{display:none}
+  .tool{height:46px;flex:1}
+  .sw{width:34px;height:34px}
+}
+@media (min-aspect-ratio:1/1) and (min-width:700px) and (max-height:520px){
+  #vPaint{padding-top:max(8px,env(safe-area-inset-top))}
+  .pSide{padding:8px;gap:6px;margin-top:44px}
+  .pHead{padding-right:110px}
+  .pHead .kw{display:none}
+  .parts .pt{min-height:36px;padding:3px 2px 4px}
+  .tool{height:40px;font-size:9px}
+  .sw{width:28px;height:28px}
+  #bRunway{min-height:44px;font-size:17px}
+}
+@media (min-aspect-ratio:1/1) and (min-width:700px) and (min-height:521px){
+  .parts{grid-template-columns:repeat(3,1fr)}
+  .parts .pt{font-size:13px;padding:8px 2px}
+  .tools{flex-wrap:wrap}
+}
+
+/* ---------- ショー */
+#vShow{position:fixed;inset:0;padding:0;z-index:20;background:#12061a}
+#show{position:absolute;inset:0;width:100%;height:100%;display:block}
+#mc{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));width:min(calc(100vw - 130px),440px);display:flex;gap:8px;align-items:flex-start;transition:opacity .3s}
+#mc .mcFace{flex:none;width:46px;height:46px}
+#mc .bubble{font-size:15px}
+#judges{position:absolute;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(96vw,640px);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+#judges.off{transform:translate(-50%,130%);opacity:0;visibility:hidden;transition:transform .45s,opacity .3s,visibility 0s .45s}
+.jc{background:rgba(26,11,36,.82);border-radius:14px;padding:8px 6px 10px;text-align:center;box-shadow:inset 0 0 0 2px rgba(255,246,238,.22);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.jc .face{width:58px;height:58px;margin:0 auto}
+.jc .nm{font-size:11px;font-weight:900;line-height:1.3;min-height:2.6em;display:flex;align-items:center;justify-content:center}
+.jc .sc{font-family:var(--disp);font-size:34px;line-height:1.1;color:var(--gold);height:40px;perspective:200px}
+.jc .sc span{display:inline-block}
+.jc .sc.flip span{animation:flip .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes flip{from{transform:rotateX(90deg) scale(1.6);opacity:0}to{transform:none;opacity:1}}
+.jc .sc.hidden span{color:#7a6286}
+#totalBox{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.6);opacity:0;text-align:center;pointer-events:none;transition:transform .35s cubic-bezier(.3,1.6,.5,1),opacity .2s}
+#totalBox.on{transform:translate(-50%,-50%) scale(1);opacity:1}
+#totalBox .t1{font-weight:900;font-size:18px;text-shadow:0 2px 6px #000}
+#totalBox .t2{font-family:var(--disp);font-size:clamp(70px,22vw,130px);line-height:1;color:#fff;text-shadow:0 6px 0 var(--pink-dk),0 0 30px rgba(255,79,154,.8)}
+@media (max-height:500px) and (min-aspect-ratio:1/1){
+  #judges{left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));transform:none;width:190px;grid-template-columns:1fr;gap:6px}
+  #judges.off{transform:translateX(130%)}
+  .jc{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:6px;padding:4px 10px 4px 6px;text-align:left}
+  .jc .face{width:38px;height:38px;margin:0}
+  .jc .nm{font-size:10px;min-height:0;justify-content:flex-start}
+  .jc .sc{font-size:26px;height:auto}
+  #mc{width:min(calc(100vw - 260px),360px)}
+  #result .wrap{width:min(720px,100%);display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;align-items:center}
+  #result .stamp,#result .resTotal{grid-column:1}
+  #result .cmts{grid-column:2;grid-row:1/3}
+  #result{padding-top:max(56px,env(safe-area-inset-top))}
+  #rowA{grid-column:1/-1}
+  #rowB{grid-column:1}
+  #bTitle{grid-column:2}
+  #result .btn{min-height:44px;font-size:15px}
+  #result .btn.pink{min-height:46px;font-size:17px}
+  .cm p{font-size:12px}
+  #result .stamp{font-size:clamp(30px,5.4vw,52px)}
+}
+#bSkip{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(58px,calc(env(safe-area-inset-top) + 52px));width:auto;min-height:40px;font-size:14px;padding:0 14px;z-index:3}
+
+/* 結果 */
+#result{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:16px 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(transparent 20%,rgba(18,6,26,.85) 62%);overflow-y:auto}
+#result .wrap{gap:12px;margin-top:auto}
+.stamp{white-space:nowrap;font-family:var(--disp);font-size:clamp(36px,11vw,68px);line-height:1.1;padding:6px 22px 10px;border:6px solid currentColor;border-radius:14px;transform:rotate(-8deg);text-align:center;background:rgba(18,6,26,.45);
+  animation:stampIn .5s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes stampIn{from{transform:rotate(-8deg) scale(3);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
+.stamp.disaster{color:#ff5a3c}.stamp.boo{color:#ff8a5c}.stamp.meh{color:#c8bcd2}.stamp.great{color:var(--gold)}.stamp.legend{color:#fff;text-shadow:0 0 18px var(--pink),0 0 34px var(--gold)}
+.resTotal{font-weight:900;font-size:18px}
+.resTotal b{font-family:var(--disp);font-weight:400;font-size:34px;color:var(--gold);margin:0 4px}
+.cmts{display:flex;flex-direction:column;gap:8px;width:100%}
+.cm{display:flex;gap:8px;align-items:flex-start;background:var(--paper);color:var(--ink);border-radius:14px;padding:8px 10px;box-shadow:0 3px 0 #b8a796}
+.cm .face{flex:none;width:44px;height:44px}
+.cm>div:last-child{flex:1;min-width:0}
+.cm .who{font-size:11px;font-weight:900;color:var(--pink-dk);display:flex;justify-content:space-between;gap:8px}
+.cm .who b{font-family:var(--disp);font-weight:400;font-size:16px;color:var(--ink)}
+.cm p{font-weight:700;font-size:14px;line-height:1.5}
+
+/* ---------- 遊び方・チュートリアル・確認 */
+.panel{width:100%;background:rgba(26,11,36,.8);border-radius:20px;padding:18px;box-shadow:inset 0 0 0 2px rgba(255,246,238,.18)}
+.panel h2{font-family:var(--disp);font-weight:400;font-size:26px;color:var(--gold);margin-bottom:10px}
+.panel ol{padding-left:1.3em;display:flex;flex-direction:column;gap:10px;line-height:1.7;font-weight:700}
+.jlist{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.jlist div{text-align:center;font-size:12px;font-weight:900}
+.jlist .face{width:56px;height:56px;margin:0 auto 4px}
+.jlist small{display:block;color:#d9c3e0;font-weight:700}
+.modal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,4,16,.6)}
+.modal .box{width:min(420px,100%);background:var(--paper);color:var(--ink);border-radius:20px;padding:20px;box-shadow:0 10px 0 #b8a796;display:flex;flex-direction:column;gap:12px;text-align:center}
+.modal h3{font-family:var(--disp);font-weight:400;font-size:22px;color:var(--pink-dk)}
+.modal p{font-weight:700;line-height:1.6}
+.modal .step{font-weight:900;font-size:12px;color:var(--violet)}
+.modal .btn.ghost{color:var(--ink);background:transparent;box-shadow:inset 0 0 0 2px rgba(29,20,36,.3)}
+#tut{background:rgba(10,4,16,.35);align-items:flex-end;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--paper);color:var(--ink);font-weight:900;padding:10px 18px;border-radius:99px;z-index:70;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+#boot-err{position:fixed;inset:auto 8px 8px 8px;z-index:99;background:#fff;color:#b00;font:12px/1.4 monospace;white-space:pre-wrap;padding:10px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){#stage .beam,body.party #stage .crowd{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage" aria-hidden="true">
+  <div class="beam b1"></div><div class="beam b2"></div><div class="beam b3"></div>
+  <div class="floor"></div>
+  <div class="curtain l"></div><div class="curtain r"></div><div class="valance"></div>
+  <svg class="crowd" viewBox="0 0 1200 100" preserveAspectRatio="none"><path id="crowdPath" fill="#0d0512"/></svg>
+</div>
+
+<div id="corner">
+  <button id="bLang" type="button" aria-label="Language"><span id="langTxt">EN</span></button>
+  <button id="bMute" type="button" aria-label="Sound">
+    <svg id="icOn" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+    <svg id="icOff" viewBox="0 0 24 24" hidden><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>
+  </button>
+</div>
+
+<main id="vTitle" class="view">
+  <div class="wrap">
+    <h1 class="logo"><span class="main" data-t="title">ぬりぬり<b>ランウェイ</b></span><span class="sub" data-t="sub"></span></h1>
+    <div class="heroBox"><canvas id="hero" width="600" height="860"></canvas></div>
+    <div class="mcLine"><div class="mcFace" data-face="mc"></div><div class="bubble"><small data-t="storyMc"></small><span data-t="lead"></span></div></div>
+    <button class="btn pink" id="bStart" type="button"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg><span data-t="start"></span></button>
+    <button class="btn ghost" id="bHow" type="button" data-t="how"></button>
+  </div>
+</main>
+
+<main id="vTheme" class="view" hidden style="justify-content:center">
+  <div class="wrap">
+    <div class="themeCard" id="themeCard"><span class="lab" data-t="themeIs"></span><div class="name" id="thName"></div><div class="kw" id="thKw"></div></div>
+    <div class="mcLine"><div class="mcFace" data-face="mc"></div><div class="bubble"><small data-t="storyMc"></small><span id="thMc"></span></div></div>
+    <button class="btn pink" id="bThemeGo" type="button" data-t="themeGo"></button>
+    <button class="btn ghost" id="bReroll" type="button" data-t="reroll"></button>
+  </div>
+</main>
+
+<main id="vPaint" class="view" hidden>
+  <div class="pGrid">
+    <div class="pLeft">
+      <div class="pHead"><span class="chip" data-t="themeIs"></span><span class="tname" id="pTheme"></span><span class="kw" id="pKw"></span></div>
+      <div class="pCanvasBox" id="pBox"><canvas id="paint"></canvas></div>
+    </div>
+    <div class="pSide">
+      <div class="parts" id="parts"></div>
+      <div class="tools">
+        <div class="tg" id="toolRow"></div>
+        <div class="sep"></div>
+        <div class="tg sub" id="subRow"></div>
+        <div class="sep"></div>
+        <div class="tg">
+          <button class="tool" id="bMirror" type="button" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7L4 12l5 5zM15 7l5 5-5 5z"/></svg><span data-t="mirror"></span></button>
+          <button class="tool" id="bUndo" type="button"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span data-t="undo"></span></button>
+        </div>
+      </div>
+      <div class="pal" id="pal"></div>
+      <button class="btn pink" id="bRunway" type="button"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span data-t="runway"></span></button>
+    </div>
+  </div>
+</main>
+
+<main id="vShow" hidden>
+  <canvas id="show"></canvas>
+  <div id="mc"><div class="mcFace" data-face="mc"></div><div class="bubble"><small data-t="storyMc"></small><span id="mcTxt"></span></div></div>
+  <button class="btn ghost" id="bSkip" type="button" data-t="skip"></button>
+  <div id="totalBox"><div class="t1" data-t="total"></div><div class="t2" id="totalNum">0</div></div>
+  <div id="judges" class="off"></div>
+  <div id="result" hidden>
+    <div class="wrap">
+      <div class="stamp" id="rStamp"></div>
+      <div class="resTotal"><span data-t="total"></span><b id="rTotal"></b><span>/ 30</span></div>
+      <div class="cmts" id="rCmts"></div>
+      <div class="row" id="rowA"><button class="btn pink" id="bAgain" type="button" data-t="again"></button></div>
+      <div class="row" id="rowB"><button class="btn gold" id="bNext" type="button" data-t="next"></button><button class="btn ghost" id="bSave" type="button" data-t="save"></button></div>
+      <button class="btn ghost" id="bTitle" type="button" data-t="toTitle"></button>
+    </div>
+  </div>
+</main>
+
+<main id="vHow" class="view" hidden>
+  <div class="wrap">
+    <div class="panel"><h2 data-t="howT"></h2><ol id="howList"></ol><div class="jlist" id="jList"></div></div>
+    <button class="btn" id="bHowBack" type="button" data-t="back"></button>
+  </div>
+</main>
+
+<div class="modal" id="tut" hidden><div class="box"><div class="step" id="tutStep"></div><h3 id="tutT"></h3><p id="tutP"></p><button class="btn pink" id="bTut" type="button"></button></div></div>
+<div class="modal" id="blankDlg" hidden><div class="box"><h3 data-t="confirmBlankT"></h3><p data-t="confirmBlank"></p><button class="btn pink" id="bKeep" type="button" data-t="keep"></button><button class="btn ghost" id="bGoAnyway" type="button" data-t="goAnyway"></button></div></div>
+
+<script>
+// 起動失敗の保険。本体より先に動く素のscript。5秒たって起動フラグが無ければ原因を画面に出す
+(function(){
+  var errs=[];
+  window.addEventListener('error',function(e){errs.push((e.message||'error')+' @'+(e.filename||'')+':'+(e.lineno||''))});
+  window.addEventListener('unhandledrejection',function(e){errs.push('reject: '+(e.reason&&e.reason.message||e.reason))});
+  setTimeout(function(){
+    if(window.__nrReady) return;
+    var d=document.createElement('div');d.id='boot-err';
+    d.textContent='起動できませんでした / failed to start\n'+(errs.join('\n')||'(no error captured)')+'\n'+navigator.userAgent;
+    document.body.appendChild(d);
+  },5000);
+})();
+</script>
+<script src="data.js?v=2"></script>
+<script src="game.js?v=2"></script>
+</body>
+</html>
