@@ -44,15 +44,17 @@ const JUDGES = [
   { id: 'madame', ja: 'マダム・ガブリエラ', en: 'Madame Gabriela', rja: 'テーマに厳しい', ren: 'Strict about the theme' },
   { id: 'gal', ja: 'ギャル審査員 ルナ', en: 'Luna the Gyaru', rja: '盛りを見る', ren: 'Loves it bold' },
   { id: 'robo', ja: 'ロボ審査員 J-300', en: 'Judge-Bot J-300', rja: 'ぬり残しを許さない', ren: 'Hates unpainted spots' },
+  { id: 'jk', ja: '辛口JK ミオ', en: 'Mio the Savage Schoolgirl', rja: '映えにだけ厳しい', ren: 'Only cares if it looks good in pics' },
 ]
 
-// 合計点（30点満点）の段階
+// 合計点（審査員4人×10点＝40点満点）の段階
+const MAX_SCORE = JUDGES.length * 10
 const TIERS = [
   { id: 'disaster', min: 0, ja: '大炎上', en: 'TOTAL DISASTER' },
-  { id: 'boo', min: 9, ja: 'ブーイング', en: 'BOOED' },
-  { id: 'meh', min: 16, ja: 'まあまあ', en: 'MEH' },
-  { id: 'great', min: 22, ja: '大喝采', en: 'STANDING OVATION' },
-  { id: 'legend', min: 27, ja: '伝説', en: 'LEGENDARY' },
+  { id: 'boo', min: 12, ja: 'ブーイング', en: 'BOOED' },
+  { id: 'meh', min: 21, ja: 'まあまあ', en: 'MEH' },
+  { id: 'great', min: 28, ja: '大喝采', en: 'STANDING OVATION' },
+  { id: 'legend', min: 35, ja: '伝説', en: 'LEGENDARY' },
 ]
 
 // 審査員ごとのコメント。tier ごとに数個から選ぶ。{t} はお題名
@@ -80,6 +82,14 @@ const COMMENTS = {
   },
 }
 
+COMMENTS.jk = {
+  disaster: { ja: ['え、無理。普通にダサい。', 'それで外歩けるの？ 勇気だけは100点。'], en: ['Nope. Just ugly.', 'You would walk outside in that? Ten out of ten for courage.'] },
+  boo: { ja: ['親が選んだ服？', 'なんか惜しいっていうか、全部惜しい。'], en: ['Did your mom pick that?', 'Not almost good. Almost everything is bad.'] },
+  meh: { ja: ['まあ、ギリ許す。ギリね。', '60点。いや、盛った。50点。'], en: ['Fine. Barely. BARELY.', 'Sixty. No wait, I was being nice. Fifty.'] },
+  great: { ja: ['……悪くないじゃん。ちょっとだけね。', 'これはストーリーに載せてあげてもいい。'], en: ['...Not bad. A little.', 'Okay, this can go on my story.'] },
+  legend: { ja: ['は？ 普通に神なんだけど。悔しい。', '負けた。明日これ真似して学校行く。'], en: ['Excuse me? That is actually god tier. Annoying.', 'I lost. I am copying this for school tomorrow.'] },
+}
+
 // 特別なひとこと（条件に当たったら最初の審査員の代わりに言う）
 const SPECIAL = {
   blank: { ja: '何も着ていないじゃない！ 警備員を呼んで！', en: 'There are no clothes at all! Call security!' },
@@ -105,7 +115,7 @@ const STR = {
     themeIs: '今日のお題', themeGo: 'ぬりはじめる', reroll: 'お題を変える',
     parts: { hair: 'かみ', face: 'かお', top: 'トップス', arms: 'うで', bottom: 'ボトムス', shoes: 'くつ' },
     tools: { pen: 'ペン', bucket: 'バケツ', stamp: 'スタンプ', eraser: 'けしゴム' },
-    side: { l: '左', r: '右' }, whole: '全体', mirror: '左右対称', undo: 'もどす', runway: 'ランウェイへ',
+    side: { l: '左', r: '右' }, whole: '全体', color: '色', mirror: '左右対称', undo: 'もどす', runway: 'ランウェイへ',
     confirmBlankT: 'まだ何もぬっていません', confirmBlank: 'このまま出ると、たぶん何か投げられます。',
     goAnyway: 'それでも出る', keep: 'ぬりにもどる',
     mc0: 'エントリーナンバー1番、マネキンくん！', mc1: 'お題は「{t}」！',
@@ -114,9 +124,9 @@ const STR = {
     skip: 'スキップ',
     tut: [
       ['パーツを選ぶと大きくなる', '下の「かみ」「トップス」などを押すと、そこが拡大されます。線の外へははみ出しません。うでとくつは押すたびに左→右→全体。'],
-      ['色と道具をえらぶ', 'バケツならパーツが一発でぬれます。スタンプで柄も入れられます。'],
+      ['色と道具は下のボタンから', '「色」を押すとパレットが、左のボタンを押すとペン・バケツ・スタンプ・けしゴムが開きます。'],
       ['お題に合わせて全部ぬる', '下のゲージが100%になるまでぬると、ロボ審査員がよろこびます。'],
-      ['できたらランウェイへ', '3人の審査員が採点します。観客の反応は…覚悟しておこう。'],
+      ['できたらランウェイへ', '4人の審査員が採点します。観客の反応は…覚悟しておこう。'],
     ],
     tapPc: 'ドラッグ', tapSp: '指でなぞる',
     tutNext: 'つぎへ', tutDone: 'はじめる',
@@ -125,8 +135,8 @@ const STR = {
       'お題が出たら、マネキンくんをぬって服を作ります。下のパーツのボタンを押すと拡大されて、そのパーツの中だけにぬれます。「全体」で元に戻ります。',
       'ペンは太さ3段階。バケツはパーツをまるごと1色に。スタンプはハート・星・水玉。',
       '左右対称をオンにすると、反対側にも同じ線が引かれます。',
-      '審査員は3人。マダムはお題に合う色か、ギャルは色の数と盛り、ロボはぬり残しを見ます。',
-      '合計30点満点。点が低いとトマトが飛んできます。高いと…お楽しみに。',
+      '審査員は4人。マダムはお題に合う色か、ギャルは色の数と盛り、ロボはぬり残し、辛口JKは映えるか（色の組み合わせと柄）を見ます。',
+      '合計40点満点。点が低いとトマトが飛んできます。高いと…お楽しみに。',
     ],
     storyMc: '司会のボンジュール',
     saved: '保存しました',
@@ -144,7 +154,7 @@ const STR = {
     themeIs: "Today's theme", themeGo: 'Start painting', reroll: 'Another theme',
     parts: { hair: 'Hair', face: 'Face', top: 'Top', arms: 'Arms', bottom: 'Bottoms', shoes: 'Shoes' },
     tools: { pen: 'Pen', bucket: 'Bucket', stamp: 'Stamp', eraser: 'Eraser' },
-    side: { l: 'L', r: 'R' }, whole: 'All', mirror: 'Mirror', undo: 'Undo', runway: 'To the runway',
+    side: { l: 'L', r: 'R' }, whole: 'All', color: 'Color', mirror: 'Mirror', undo: 'Undo', runway: 'To the runway',
     confirmBlankT: 'Nothing is painted yet', confirmBlank: 'If you go like this, things will probably be thrown at you.',
     goAnyway: 'Go anyway', keep: 'Keep painting',
     mc0: 'Entry number one: Mannequin-kun!', mc1: 'The theme is "{t}"!',
@@ -153,9 +163,9 @@ const STR = {
     skip: 'Skip',
     tut: [
       ['Pick a part to zoom in', 'Tap Hair, Top and so on below to zoom in. Paint stays inside the part. Arms and shoes go left, right, then back.'],
-      ['Pick a color and a tool', 'The bucket fills a whole part at once. Stamps add patterns.'],
+      ['Colors and tools are below', 'Tap Color to open the palette, and the left button for pen, bucket, stamps and eraser.'],
       ['Paint everything to fit the theme', 'Fill the gauges to 100% and the robot judge will be happy.'],
-      ['Then hit the runway', 'Three judges score you. The crowd... brace yourself.'],
+      ['Then hit the runway', 'Four judges score you. The crowd... brace yourself.'],
     ],
     tapPc: 'Drag on', tapSp: 'Swipe on',
     tutNext: 'Next', tutDone: "Let's go",
@@ -164,8 +174,8 @@ const STR = {
       'Get a theme, then paint the mannequin. Tap a part button to zoom in and paint only inside it. Tap All to zoom out.',
       'Pen has 3 sizes. Bucket fills a part with one color. Stamps: heart, star, dots.',
       'Turn on Mirror to draw the same line on the other side.',
-      'Three judges: Madame checks the theme colors, Luna wants bold color, the robot hates gaps.',
-      '30 points max. Low scores get tomatoes. High scores get... you will see.',
+      'Four judges: Madame checks the theme colors, Luna wants bold color, the robot hates gaps, and Mio wants it to look good in pics.',
+      '40 points max. Low scores get tomatoes. High scores get... you will see.',
     ],
     storyMc: 'MC Bonjour',
     saved: 'Saved',

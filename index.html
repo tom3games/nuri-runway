@@ -104,72 +104,71 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .themeCard.spin .name{animation:spin .09s linear infinite}
 @keyframes spin{0%{transform:translateY(-6px);opacity:.4}50%{opacity:1}100%{transform:translateY(6px);opacity:.4}}
 
-/* ---------- ぬり画面 */
-#vPaint{padding:max(54px,calc(env(safe-area-inset-top) + 50px)) 8px max(8px,calc(env(safe-area-inset-bottom) + 6px));gap:6px;height:100svh;min-height:0}
-.pGrid{width:100%;max-width:1100px;flex:1;min-height:0;display:grid;gap:6px;
-  grid-template-columns:1fr auto;grid-template-rows:auto minmax(0,1fr) auto auto auto;
-  grid-template-areas:"head head" "canvas rail" "parts parts" "pal pal" "go go"}
+/* ---------- ぬり画面（キャンバスを最大に。道具は下の1行、選ぶ時だけ開く） */
+#vPaint{padding:max(52px,calc(env(safe-area-inset-top) + 48px)) 8px max(8px,calc(env(safe-area-inset-bottom) + 6px));gap:6px;height:100svh;min-height:0}
+.pGrid{width:100%;max-width:1100px;flex:1;min-height:0;display:grid;gap:6px;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"head" "canvas" "parts" "tbar"}
 .pLeft,.pSide{display:contents}
-.pHead{grid-area:head;display:flex;align-items:center;gap:6px 8px;justify-content:center;flex-wrap:wrap;text-align:center}
+.pHead{grid-area:head;display:flex;align-items:center;gap:4px 8px;justify-content:center;flex-wrap:wrap;text-align:center}
 .pHead .chip{font-weight:900;background:var(--violet);border-radius:99px;padding:3px 12px;font-size:12px}
 .pHead .tname{font-family:var(--disp);font-size:clamp(18px,5vw,26px);color:var(--gold);line-height:1.2}
 .pHead .kw{width:100%;font-size:12px;color:#d9c3e0;font-weight:700}
 .pCanvasBox{grid-area:canvas;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
 #paint{touch-action:none;display:block;border-radius:18px;background:radial-gradient(circle at 50% 30%,#fffaf4,#f1e3d6);box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 0 0 3px rgba(255,255,255,.6);cursor:crosshair}
 .parts{grid-area:parts;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.parts .pt{position:relative;white-space:nowrap;letter-spacing:-.03em;font-size:10px}
-.parts .pt .side{position:absolute;top:-7px;right:-4px;font-size:10px;background:var(--pink);color:#fff;border-radius:99px;padding:1px 6px;line-height:1.4}
+.parts .pt{position:relative;white-space:nowrap;letter-spacing:-.03em;font-size:10px;background:rgba(255,246,238,.1);border-radius:10px;padding:5px 2px 6px;text-align:center;font-weight:900;border:2px solid transparent;cursor:pointer;color:var(--paper);min-height:40px}
+.parts .pt.on{border-color:var(--gold);background:rgba(245,200,76,.18)}
 .parts .pt.all{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .parts .pt.all svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.parts .pt{background:rgba(255,246,238,.1);border-radius:10px;padding:5px 2px 6px;text-align:center;font-size:11px;font-weight:900;border:2px solid transparent;cursor:pointer;color:var(--paper);min-height:40px}
-.parts .pt.on{border-color:var(--gold);background:rgba(245,200,76,.18)}
 .parts .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin:4px 4px 0;overflow:hidden}
 .parts .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--gold));transition:width .25s}
 .parts .pt.full .bar i{background:#6ee08a}
-/* 縦持ち: 道具はキャンバスの右に縦2列 */
-.tools{grid-area:rail;display:grid;grid-template-columns:repeat(2,46px);gap:4px;align-content:center}
-.tools .tg{display:contents}
-.tool{min-width:0;width:100%;height:46px;border-radius:10px;border:0;background:rgba(255,246,238,.08);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:900;gap:1px;color:var(--paper);padding:0 2px;line-height:1.1}
-.tool svg{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tbar{grid-area:tbar;display:flex;gap:5px;align-items:stretch}
+.tb{flex:none;width:52px;height:52px;border-radius:12px;border:0;background:rgba(255,246,238,.1);color:var(--paper);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:900;position:relative;padding:0}
+.tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tb.on{background:var(--paper);color:var(--ink)}
+.tb:disabled{opacity:.35}
+.tb .cur{width:24px;height:24px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,.3)}
+.tb .caret{position:absolute;right:4px;top:4px;border:4px solid transparent;border-bottom-color:currentColor;border-top:0;opacity:.7}
+.tb.open{background:var(--gold);color:var(--ink)}
+#bRunway{flex:1;min-width:0;min-height:52px;font-size:16px;letter-spacing:.02em;padding:0 8px;gap:4px;white-space:nowrap}
+#bRunway svg{width:20px;height:20px}
+/* 選ぶ時だけ開くパネル */
+.pop{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(8px,env(safe-area-inset-bottom) + 6px) + 64px);z-index:40;width:min(440px,calc(100vw - 16px));background:rgba(32,14,44,.96);border-radius:18px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,246,238,.18);display:flex;flex-direction:column;gap:8px;animation:popIn .16s ease-out}
+@keyframes popIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+.pop .tg{display:flex;gap:6px;justify-content:center}
+.tool{flex:1;max-width:96px;height:54px;border-radius:12px;border:0;background:rgba(255,246,238,.08);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:900;gap:2px;color:var(--paper);padding:0 2px}
+.tool svg{width:24px;height:24px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tool.on{background:var(--paper);color:var(--ink)}
-.tool:disabled{opacity:.35}
-.tools .sep{grid-column:1/-1;height:2px;background:rgba(255,246,238,.15);border-radius:1px;align-self:center}
-.pal{grid-area:pal;display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
-.sw{height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);cursor:pointer;position:relative;justify-self:center;width:34px}
+.pop .sub{border-top:2px solid rgba(255,246,238,.12);padding-top:8px}
+.pal{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.sw{width:100%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,.25);cursor:pointer;position:relative;max-width:46px;justify-self:center}
 .sw.on{border-color:#fff;box-shadow:0 0 0 3px var(--pink)}
 .sw.on::after{content:"";position:absolute;inset:30%;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 0 2px rgba(0,0,0,.25)}
-#bRunway{grid-area:go;min-height:52px}
-@media (max-height:700px){.pHead .kw{display:none}.sw{width:30px;height:30px}#bRunway{min-height:46px;font-size:18px}}
-/* 横持ち・PC: 右にパネル */
-@media (min-aspect-ratio:1/1) and (min-width:700px){
+@media (max-height:700px){.pHead .kw{display:none}.tb{width:46px;height:46px}#bRunway{min-height:46px;font-size:15px}.pop{bottom:calc(max(8px,env(safe-area-inset-bottom) + 6px) + 58px)}}
+@media (max-width:370px){.tb{width:44px}#bRunway span{font-size:14px}}
+/* 横持ち・PC: 右に細いパネル（パーツと道具）。キャンバスは高さいっぱい */
+@media (min-aspect-ratio:1/1) and (min-width:560px){
   .pGrid{display:flex;flex-direction:row;align-items:stretch;gap:12px}
   .pLeft{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px}
   .pCanvasBox{flex:1}
-  .pSide{align-self:center;display:flex;flex-direction:column;justify-content:center;gap:8px;width:360px;max-height:100%;flex:none;background:rgba(26,11,36,.55);border-radius:18px;padding:12px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);min-height:0}
-  .tools{display:flex;gap:4px;grid-template-columns:none}
-  .tools{flex-wrap:wrap}
-  .tools .tg{display:flex;gap:3px;flex:auto}
-  .tools .tg.sub{order:5;flex-basis:100%;justify-content:center}
-  .tools .tg.sub .tool{flex:0 1 80px;flex-direction:row;gap:6px;font-size:11px}
-  .tool span{white-space:nowrap}
-  .tools .sep{display:none}
-  .tool{height:46px;flex:1}
-  .sw{width:34px;height:34px}
+  .pSide{align-self:center;display:flex;flex-direction:column;gap:10px;width:300px;flex:none;background:rgba(26,11,36,.55);border-radius:18px;padding:12px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .parts{grid-template-columns:repeat(4,1fr)}
+  .parts .pt{font-size:12px;padding:7px 2px}
+  .tbar{flex-wrap:wrap}
+  .tbar .tb{flex:1}
+  #bRunway{flex-basis:100%}
+  .pop{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:360px;bottom:auto;top:50%;translate:0 -50%}
+  @keyframes popIn{from{opacity:0}to{opacity:1}}
 }
-@media (min-aspect-ratio:1/1) and (min-width:700px) and (max-height:520px){
+@media (min-aspect-ratio:1/1) and (min-width:560px) and (max-height:520px){
   #vPaint{padding-top:max(8px,env(safe-area-inset-top))}
-  .pSide{padding:8px;gap:6px;margin-top:44px}
+  .pSide{margin-top:44px;padding:8px;gap:6px}
   .pHead{padding-right:110px}
   .pHead .kw{display:none}
-  .parts .pt{min-height:36px;padding:3px 2px 4px}
-  .tool{height:40px;font-size:9px}
-  .sw{width:28px;height:28px}
-  #bRunway{min-height:44px;font-size:17px}
-}
-@media (min-aspect-ratio:1/1) and (min-width:700px) and (min-height:521px){
-  .parts{grid-template-columns:repeat(4,1fr)}
-  .parts .pt{font-size:13px;padding:8px 2px}
-  .tools{flex-wrap:wrap}
+  .parts .pt{min-height:34px;padding:3px 2px 4px}
+  .tbar .tb{height:44px}
+  #bRunway{min-height:44px}
+  .pop .tool{height:46px}
 }
 
 /* ---------- ショー */
@@ -178,11 +177,11 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 #mc{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));width:min(calc(100vw - 130px),440px);display:flex;gap:8px;align-items:flex-start;transition:opacity .3s}
 #mc .mcFace{flex:none;width:46px;height:46px}
 #mc .bubble{font-size:15px}
-#judges{position:absolute;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(96vw,640px);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+#judges{position:absolute;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(96vw,720px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
 #judges.off{transform:translate(-50%,130%);opacity:0;visibility:hidden;transition:transform .45s,opacity .3s,visibility 0s .45s}
 .jc{background:rgba(26,11,36,.82);border-radius:14px;padding:8px 6px 10px;text-align:center;box-shadow:inset 0 0 0 2px rgba(255,246,238,.22);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.jc .face{width:58px;height:58px;margin:0 auto}
-.jc .nm{font-size:11px;font-weight:900;line-height:1.3;min-height:2.6em;display:flex;align-items:center;justify-content:center}
+.jc .face{width:min(52px,11vw);height:min(52px,11vw);margin:0 auto}
+.jc .nm{font-size:10px;font-weight:900;line-height:1.3;min-height:2.6em;display:flex;align-items:center;justify-content:center}
 .jc .sc{font-family:var(--disp);font-size:34px;line-height:1.1;color:var(--gold);height:40px;perspective:200px}
 .jc .sc span{display:inline-block}
 .jc .sc.flip span{animation:flip .45s cubic-bezier(.2,.8,.2,1)}
@@ -193,10 +192,10 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 #totalBox .t1{font-weight:900;font-size:18px;text-shadow:0 2px 6px #000}
 #totalBox .t2{font-family:var(--disp);font-size:clamp(70px,22vw,130px);line-height:1;color:#fff;text-shadow:0 6px 0 var(--pink-dk),0 0 30px rgba(255,79,154,.8)}
 @media (max-height:500px) and (min-aspect-ratio:1/1){
-  #judges{left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));transform:none;width:190px;grid-template-columns:1fr;gap:6px}
+  #judges{left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));transform:none;width:190px;grid-template-columns:1fr;gap:4px}
   #judges.off{transform:translateX(130%)}
-  .jc{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:6px;padding:4px 10px 4px 6px;text-align:left}
-  .jc .face{width:38px;height:38px;margin:0}
+  .jc{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:6px;padding:3px 10px 3px 6px;text-align:left}
+  .jc .face{width:34px;height:34px;margin:0}
   .jc .nm{font-size:10px;min-height:0;justify-content:flex-start}
   .jc .sc{font-size:26px;height:auto}
   #mc{width:min(calc(100vw - 260px),360px)}
@@ -204,9 +203,8 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   #result .stamp,#result .resTotal{grid-column:1}
   #result .cmts{grid-column:2;grid-row:1/3}
   #result{padding-top:max(56px,env(safe-area-inset-top))}
-  #rowA{grid-column:1/-1}
-  #rowB{grid-column:1}
-  #bTitle{grid-column:2}
+  #rowA{grid-column:1}
+  #rowB{grid-column:2}
   #result .btn{min-height:44px;font-size:15px}
   #result .btn.pink{min-height:46px;font-size:17px}
   .cm p{font-size:12px}
@@ -216,7 +214,9 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 
 /* 結果 */
 #result{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:16px 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(transparent 20%,rgba(18,6,26,.85) 62%);overflow-y:auto}
-#result .wrap{gap:12px;margin-top:auto}
+#result .wrap{gap:10px;margin-top:auto}
+#rowB .btn{font-size:15px;padding:0 8px}
+@media (max-height:700px) and (max-aspect-ratio:1/1){#result .cm{padding:6px 8px}#result .cm .face{width:34px;height:34px}#result .cm p{font-size:12px;line-height:1.45}#result .stamp{font-size:min(11vw,7vh)}#result .btn{min-height:44px}#result .btn.pink{min-height:48px}}
 .stamp{white-space:nowrap;font-family:var(--disp);font-size:clamp(36px,11vw,68px);line-height:1.1;padding:6px 22px 10px;border:6px solid currentColor;border-radius:14px;transform:rotate(-8deg);text-align:center;background:rgba(18,6,26,.45);
   animation:stampIn .5s cubic-bezier(.3,1.5,.5,1) both}
 @keyframes stampIn{from{transform:rotate(-8deg) scale(3);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}
@@ -235,7 +235,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .panel{width:100%;background:rgba(26,11,36,.8);border-radius:20px;padding:18px;box-shadow:inset 0 0 0 2px rgba(255,246,238,.18)}
 .panel h2{font-family:var(--disp);font-weight:400;font-size:26px;color:var(--gold);margin-bottom:10px}
 .panel ol{padding-left:1.3em;display:flex;flex-direction:column;gap:clamp(4px,1vh,10px);line-height:1.6;font-weight:700;font-size:clamp(12px,1.9vh,15px)}
-.jlist{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.jlist{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
 .jlist div{text-align:center;font-size:12px;font-weight:900}
 .jlist .face{width:56px;height:56px;margin:0 auto 4px}
 .jlist small{display:block;color:#d9c3e0;font-weight:700}
@@ -342,20 +342,17 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
     </div>
     <div class="pSide">
       <div class="parts" id="parts"></div>
-      <div class="tools">
-        <div class="tg" id="toolRow"></div>
-        <div class="sep"></div>
-        <div class="tg sub" id="subRow"></div>
-        <div class="sep"></div>
-        <div class="tg">
-          <button class="tool" id="bMirror" type="button" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7L4 12l5 5zM15 7l5 5-5 5z"/></svg><span data-t="mirror"></span></button>
-          <button class="tool" id="bUndo" type="button"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span data-t="undo"></span></button>
-        </div>
+      <div class="tbar">
+        <button class="tb" id="bTool" type="button" aria-haspopup="true"><svg viewBox="0 0 24 24" id="toolIc"></svg><span id="toolLab"></span><i class="caret"></i></button>
+        <button class="tb" id="bColor" type="button" aria-haspopup="true"><b class="cur" id="colorCur"></b><span data-t="color"></span><i class="caret"></i></button>
+        <button class="tb" id="bMirror" type="button" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 3"/><path d="M9 7L4 12l5 5zM15 7l5 5-5 5z"/></svg><span data-t="mirror"></span></button>
+        <button class="tb" id="bUndo" type="button"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span data-t="undo"></span></button>
+        <button class="btn pink" id="bRunway" type="button"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span data-t="runway"></span></button>
       </div>
-      <div class="pal" id="pal"></div>
-      <button class="btn pink" id="bRunway" type="button"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><span data-t="runway"></span></button>
     </div>
   </div>
+  <div class="pop" id="popTool" hidden><div class="tg" id="toolRow"></div><div class="tg sub" id="subRow"></div></div>
+  <div class="pop" id="popColor" hidden><div class="pal" id="pal"></div></div>
 </main>
 
 <main id="vShow" hidden>
@@ -367,11 +364,10 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   <div id="result" hidden>
     <div class="wrap">
       <div class="stamp" id="rStamp"></div>
-      <div class="resTotal"><span data-t="total"></span><b id="rTotal"></b><span>/ 30</span></div>
+      <div class="resTotal"><span data-t="total"></span><b id="rTotal"></b><span>/ 40</span></div>
       <div class="cmts" id="rCmts"></div>
       <div class="row" id="rowA"><button class="btn pink" id="bAgain" type="button" data-t="again"></button></div>
-      <div class="row" id="rowB"><button class="btn gold" id="bNext" type="button" data-t="next"></button><button class="btn ghost" id="bSave" type="button" data-t="save"></button></div>
-      <button class="btn ghost" id="bTitle" type="button" data-t="toTitle"></button>
+      <div class="row" id="rowB"><button class="btn gold" id="bNext" type="button" data-t="next"></button><button class="btn ghost" id="bSave" type="button" data-t="save"></button><button class="btn ghost" id="bTitle" type="button" data-t="toTitle"></button></div>
     </div>
   </div>
 </main>
@@ -410,7 +406,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   },5000);
 })();
 </script>
-<script src="data.js?v=6"></script>
-<script src="game.js?v=6"></script>
+<script src="data.js?v=10"></script>
+<script src="game.js?v=10"></script>
 </body>
 </html>

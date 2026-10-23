@@ -15,6 +15,12 @@ async function t(name, fn) {
   catch (e) { fail++; results.push(`FAIL ${name}  ${e.message.split('\n')[0]}`) }
 }
 const expect = (c, msg) => { if (!c) throw new Error(msg) }
+// 道具・色は下のボタンで開くパネルの中。開いてから選び、最後に閉じる
+async function pick(pg, sel) {
+  const color = sel.includes('.sw'), pop = color ? '#popColor' : '#popTool'
+  if (await pg.isHidden(pop)) await pg.click(color ? '#bColor' : '#bTool')
+  await pg.click(sel); await pg.evaluate(() => nr.closePops())
+}
 
 async function open(browser, opts = {}, keepTut = false) {
   const ctx = await browser.newContext({ locale: 'ja-JP', viewport: { width: 390, height: 844 }, ...opts })
@@ -65,16 +71,18 @@ await t('初回はチュートリアルが出て4枚目で閉じる', async () =
   expect(!(await p.isVisible('#tut')), 'still open'); return first
 })
 await t('ぬり画面: キャンバスと道具が画面内に全部収まる（390x844）', async () => {
-  const r = await p.evaluate(() => { const g = id => document.querySelector(id).getBoundingClientRect(); return { cv: g('#paint'), run: g('#bRunway'), pal: g('#pal'), H: innerHeight } })
-  expect(r.cv.height > 300, 'canvas ' + r.cv.height); expect(r.run.bottom <= r.H + 1, 'runway btn ' + r.run.bottom); expect(r.cv.bottom <= r.pal.top, 'overlap')
+  const r = await p.evaluate(() => { const g = id => document.querySelector(id).getBoundingClientRect(); return { cv: g('#paint'), run: g('#bRunway'), parts: g('#parts'), H: innerHeight, W: innerWidth } })
+  expect(r.cv.height > 520 && r.cv.width > 280, 'canvas ' + r.cv.width + 'x' + r.cv.height); expect(r.run.bottom <= r.H + 1, 'runway btn ' + r.run.bottom); expect(r.cv.bottom <= r.parts.top, 'overlap')
   return { canvasH: Math.round(r.cv.height), btnBottom: Math.round(r.run.bottom) }
 })
 await t('ぬり画面ではみ出しがない', async () => { const o = await overflow(p); expect(o.sw <= o.W && !o.bad.length, JSON.stringify(o)) })
 
 // 設計座標 → 画面座標
-const toScreen = (x, y) => p.evaluate(([x, y]) => { const r = document.querySelector('#paint').getBoundingClientRect(), v = nr.S.vw; return [r.left + (x - v.x) / v.w * r.width, r.top + (y - v.y) / v.h * r.height] }, [x, y])
+const toScreen = (x, y, pi) => p.evaluate(([x, y, pi]) => { const r = document.querySelector('#paint').getBoundingClientRect()
+  const ps = nr.S.pan, i = pi ?? Math.max(0, ps.findIndex(q => x >= q.vw.x && x <= q.vw.x + q.vw.w && y >= q.vw.y && y <= q.vw.y + q.vw.h)), q = ps[i], v = q.vw
+  return [r.left + (q.f.x + (x - v.x) / v.w * q.f.w) * r.width, r.top + (q.f.y + (y - v.y) / v.h * q.f.h) * r.height] }, [x, y, pi])
 const covs = () => p.evaluate(() => Object.fromEntries(nr.PARTS.map(q => [q.id, +nr.coverage(nr.S.outfit, q.id).toFixed(3)])))
-async function drag(pts) { const s = await toScreen(...pts[0]); await p.mouse.move(...s); await p.mouse.down(); for (const q of pts.slice(1)) { const s2 = await toScreen(...q); await p.mouse.move(...s2, { steps: 6 }) } await p.mouse.up() }
+async function drag(pts) { const s0 = await toScreen(...pts[0]), pi = await p.evaluate(([x, y]) => { const r = document.querySelector('#paint').getBoundingClientRect(); return nr.S.pan.findIndex(q => { const fx = (x - r.left) / r.width, fy = (y - r.top) / r.height; return fx >= q.f.x && fx < q.f.x + q.f.w && fy >= q.f.y && fy < q.f.y + q.f.h }) }, s0); const s = s0; await p.mouse.move(...s); await p.mouse.down(); for (const q of pts.slice(1)) { const s2 = await toScreen(q[0], q[1], pi < 0 ? 0 : pi); await p.mouse.move(...s2, { steps: 6 }) } await p.mouse.up() }
 
 await t('マウスでなぞるとトップスだけがぬれる（腕へはみ出さない）', async () => {
   await drag([[150, 200], [40, 200], [20, 220]])
@@ -82,13 +90,13 @@ await t('マウスでなぞるとトップスだけがぬれる（腕へはみ�
 })
 await t('なぞり始めた部位がゲージに出る', async () => { const v = await p.getAttribute('.pt[data-part="top"]', 'data-cov'); expect(+v > 0.02, v); return v })
 await t('バケツでパーツがまるごとぬれる（97%以上）', async () => {
-  await p.click('[data-tool="bucket"]'); await p.click('.sw[data-color="3"]')
+  await pick(p, '[data-tool="bucket"]'); await pick(p, '.sw[data-color="3"]')
   const s = await toScreen(122, 380); await p.mouse.click(...s)
   const c = await covs(); expect(c.bottom > 0.97 && c.shoes === 0, JSON.stringify(c)); return c.bottom
 })
 await t('もどすで直前の状態に戻る', async () => { await p.click('#bUndo'); const c = await covs(); expect(c.bottom === 0, JSON.stringify(c)) })
 await t('左右対称: 左腕をなぞると右腕にも描かれる', async () => {
-  await p.click('[data-tool="pen"]'); await p.click('[data-size="2"]'); await p.click('#bMirror')
+  await pick(p, '[data-tool="pen"]'); await pick(p, '[data-size="2"]'); await p.click('#bMirror')
   await drag([[64, 200], [58, 260], [56, 300]])
   const r = await p.evaluate(() => { const c = nr.S.outfit.arms, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, half = c.width / 2; let L = 0, R = 0
     for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 127) x < half ? L++ : R++
@@ -96,24 +104,24 @@ await t('左右対称: 左腕をなぞると右腕にも描かれる', async () 
   expect(r.L > 200 && r.R > 200 && Math.abs(r.L - r.R) / r.L < 0.15, JSON.stringify(r)); return r
 })
 await t('スタンプが押せる（星）', async () => {
-  await p.click('#bMirror'); await p.click('[data-tool="stamp"]'); await p.click('[data-stamp="star"]'); await p.click('.sw[data-color="6"]')
+  await p.click('#bMirror'); await pick(p, '[data-tool="stamp"]'); await pick(p, '[data-stamp="star"]'); await pick(p, '.sw[data-color="6"]')
   const before = (await covs()).top; const s = await toScreen(170, 240); await p.mouse.click(...s)
   const after = (await covs()).top; expect(after > before, before + ' -> ' + after); return { before, after }
 })
 await t('けしゴムで消える', async () => {
-  await p.click('[data-tool="eraser"]'); const before = (await covs()).top
+  await pick(p, '[data-tool="eraser"]'); const before = (await covs()).top
   await drag([[100, 150], [200, 150], [200, 260], [100, 260]]); const after = (await covs()).top; expect(after < before, before + ' -> ' + after); return { before, after }
 })
 await p.screenshot({ path: ROOT + '/shots/04-paint.png' })
 await t('パーツのボタンで拡大される（くつ）。他は薄く、全体で戻る', async () => {
   await p.click('.pt[data-part="shoes"]'); await p.waitForTimeout(700)
-  const v = await p.evaluate(() => ({ ...nr.S.vw, zoom: nr.S.zoom, on: document.querySelector('.pt.on').dataset.part }))
-  expect(v.zoom === 'shoes' && v.w < 120 && v.y > 250 && v.on === 'shoes', JSON.stringify(v))
+  const v = await p.evaluate(() => ({ panes: nr.S.pan.map(q => ({ ...q.vw, f: q.f })), zoom: nr.S.zoom, on: document.querySelector('.pt.on').dataset.part }))
+  expect(v.zoom === 'shoes' && v.panes.length === 2 && v.panes.every(q => q.y > 400) && v.panes[0].x + v.panes[0].w / 2 < 150 && v.panes[1].x + v.panes[1].w / 2 > 150 && v.on === 'shoes', JSON.stringify(v))
   await p.screenshot({ path: ROOT + '/shots/05-zoom-shoes.png' })
-  return { zoom: +(300 / v.w).toFixed(2) + 'x' }
+  return { zoom: v.panes.map(q => +(q.f.w * 300 / q.w).toFixed(2) + 'x'), layout: v.panes[1].f.x > 0 ? 'side' : 'stack' }
 })
 await t('拡大中: なぞるとそのパーツだけにぬれる（外から描き始めてもはみ出さない）', async () => {
-  await p.click('[data-tool="pen"]'); await p.click('[data-size="1"]'); await p.click('.sw[data-color="1"]')
+  await pick(p, '[data-tool="pen"]'); await pick(p, '[data-size="1"]'); await pick(p, '.sw[data-color="1"]')
   const before = await covs()
   await drag([[85, 470], [110, 505], [140, 505], [150, 470]])
   const c = await covs(); expect(c.shoes > before.shoes + 0.02 && c.bottom === before.bottom, JSON.stringify({ before, c })); return { shoes: c.shoes }
@@ -124,16 +132,23 @@ await t('拡大中の座標: 画面のくつの位置をなぞると、くつの
     return { minY: Math.round(minY / nr.PS + 486), maxY: Math.round(maxY / nr.PS + 486) } })
   expect(r.minY <= r.maxY && r.minY >= 486 && r.maxY <= 530, JSON.stringify(r)); return r
 })
-await t('うでは押すたびに 左→右→全体。片側は2倍以上に寄る', async () => {
-  const seq = []
-  for (let i = 0; i < 3; i++) { await p.click('.pt[data-part="arms"]'); await p.waitForTimeout(700); seq.push(await p.evaluate(() => ({ z: nr.S.zoom, s: nr.S.side, k: +(300 / nr.S.vw.w).toFixed(2), cx: Math.round(nr.S.vw.x + nr.S.vw.w / 2) }))) }
-  expect(seq[0].s === 'l' && seq[0].k >= 2 && seq[0].cx < 150 && seq[1].s === 'r' && seq[1].cx > 150 && seq[2].z === null, JSON.stringify(seq))
-  await p.click('.pt[data-part="arms"]'); await p.waitForTimeout(700); await p.screenshot({ path: ROOT + '/shots/06-zoom-arm.png' })
-  return seq.map(q => (q.s || 'all') + ':' + q.k + 'x')
+await t('うでを拡大すると左右が2枚の窓に並び、両方とも2倍以上', async () => {
+  await p.click('.pt[data-part="arms"]'); await p.waitForTimeout(700)
+  const r = await p.evaluate(() => nr.S.pan.map(q => ({ k: +(q.f.w * 300 / q.vw.w).toFixed(2), cx: Math.round(q.vw.x + q.vw.w / 2) })))
+  expect(r.length === 2 && r[0].cx < 150 && r[1].cx > 150 && r.every(q => q.k >= 2), JSON.stringify(r))
+  await p.screenshot({ path: ROOT + '/shots/06-zoom-arm.png' }); return r
 })
+await t('拡大中: 右の窓でなぞると右うでにぬれる（左の窓では左うで）', async () => {
+  await pick(p, '.sw[data-color="10"]'); await pick(p, '[data-tool="pen"]'); await pick(p, '[data-size="2"]')
+  const count = () => p.evaluate(() => { const c = nr.S.outfit.arms, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, half = c.width / 2; let L = 0, R = 0
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const i = (y * c.width + x) * 4; if (d[i + 3] > 127 && d[i + 2] > 200 && d[i] < 80) x < half ? L++ : R++ } return { L, R } })
+  const b = await count(); await drag([[236, 200], [240, 260], [244, 300]]); const a = await count()
+  expect(a.R > b.R + 100 && a.L === b.L, JSON.stringify({ b, a })); return a
+})
+await t('もう一度押すと全体に戻る', async () => { await p.click('.pt[data-part="arms"]'); await p.waitForTimeout(700); const n = await p.evaluate(() => [nr.S.pan.length, nr.S.zoom]); expect(n[0] === 1 && n[1] === null, JSON.stringify(n)) })
 await t('全体ボタンで元に戻る', async () => {
-  await p.click('.pt.all'); await p.waitForTimeout(700); const v = await p.evaluate(() => ({ ...nr.S.vw, zoom: nr.S.zoom }))
-  expect(v.zoom === null && Math.abs(v.w - 300) < 0.5 && Math.abs(v.y) < 0.5, JSON.stringify(v))
+  await p.click('.pt[data-part="top"]'); await p.waitForTimeout(500); await p.click('.pt.all'); await p.waitForTimeout(700); const v = await p.evaluate(() => ({ ...nr.S.pan[0].vw, zoom: nr.S.zoom, n: nr.S.pan.length }))
+  expect(v.n === 1 && v.zoom === null && Math.abs(v.w - 300) < 0.5 && Math.abs(v.y) < 0.5, JSON.stringify(v))
 })
 await t('ブラウザの拡大が起きない（viewport・ピンチ・Ctrl+ホイール・Ctrl+プラス）', async () => {
   const r = await p.evaluate(() => {
@@ -169,21 +184,21 @@ const scoreOutfit = (plan, themeId, strokes = 0) => p.evaluate(([plan, themeId, 
     const x = c.getContext('2d'); x.setTransform(nr.PS, 0, 0, nr.PS, -q.box.x * nr.PS, -q.box.y * nr.PS); x.save(); x.clip(q.path)
     if (Array.isArray(col)) { x.fillStyle = PALETTE[col[0]].c; x.fillRect(q.box.x, q.box.y, q.box.w, q.box.h / 2) } else { x.fillStyle = PALETTE[col].c; x.fillRect(q.box.x, q.box.y, q.box.w, q.box.h) }
     x.restore() }
-  const keep = [nr.S.strokes, nr.S.stamps, nr.S.buckets]; nr.S.strokes = strokes; nr.S.stamps = 0; nr.S.buckets = 6
+  const keep = [nr.S.strokes, nr.S.stamps, nr.S.buckets]; nr.S.strokes = strokes; nr.S.stamps = strokes >= 40 ? 14 : 0; nr.S.buckets = 6
   const st = nr.analyze(o); Object.assign(nr.S, { strokes: keep[0], stamps: keep[1], buckets: keep[2] })
   const th = nr.THEMES.find(t => t.id === themeId); return [nr.scoreFrom(st, th, 7), nr.scoreFrom(st, th, 7)]
 }, [plan, themeId, strokes])
-await t('お題どおりの色で全部ぬり＋手間をかけると伝説（27点以上）', async () => {
+await t('お題どおりの色で全部ぬり＋手間と柄を入れると伝説（35点以上）', async () => {
   const [r, r2] = await scoreOutfit({ hair: 6, face: 14, top: 5, arms: 9, bottom: 8, shoes: 4 }, 'tropical', 60)
-  expect(r.total >= 27 && r.tier === 'legend', JSON.stringify(r)); expect(JSON.stringify(r) === JSON.stringify(r2), 'not deterministic'); return { total: r.total, scores: r.scores, info: r.info }
+  expect(r.total >= 35 && r.tier === 'legend', JSON.stringify(r)); expect(JSON.stringify(r) === JSON.stringify(r2), 'not deterministic'); return { total: r.total, scores: r.scores, info: r.info }
 })
 await t('全身ひと色（お題の色）はまあまあ止まり＋パジャマのひとこと', async () => {
   const [r] = await scoreOutfit({ hair: 3, face: 3, top: 3, arms: 3, bottom: 3, shoes: 3 }, 'flamenco', 0)
-  expect(r.special === 'mono' && r.total >= 14 && r.total <= 23, JSON.stringify(r)); return { total: r.total, tier: r.tier }
+  expect(r.special === 'mono' && r.tier !== 'great' && r.tier !== 'legend', JSON.stringify(r)); return { total: r.total, tier: r.tier }
 })
 await t('お題と違う色で半分だけぬるとブーイング以下', async () => {
   const [r] = await scoreOutfit({ top: [6], bottom: [7], hair: 6 }, 'snow', 5)
-  expect(r.total <= 15, JSON.stringify(r)); return { total: r.total, tier: r.tier, info: r.info }
+  expect(r.tier === 'disaster' || r.tier === 'boo', JSON.stringify(r)); return { total: r.total, tier: r.tier, info: r.info }
 })
 await t('点の分布: 5段階すべてに届く', async () => {
   const plans = [[{}, 'snow'], [{ top: 3, bottom: 1, hair: 1 }, 'rock'], [{ hair: 3, face: 3, top: 3, arms: 3, bottom: 3, shoes: 3 }, 'flamenco'], [{ hair: 1, face: 14, top: 3, arms: 12, bottom: 1, shoes: 13 }, 'rock'], [{ hair: 6, face: 14, top: 5, arms: 9, bottom: 8, shoes: 4 }, 'tropical']]
@@ -197,14 +212,14 @@ async function runShow(page, plan, themeId, name) {
   await page.evaluate(([plan, themeId]) => {
     nr.setTheme(themeId); nr.S.outfit = Object.fromEntries(nr.PARTS.map(q => { const c = document.createElement('canvas'); c.width = q.box.w * nr.PS; c.height = q.box.h * nr.PS; return [q.id, c] }))
     for (const [id, col] of Object.entries(plan)) nr.bucket(id, col)
-    nr.S.strokes = 60; nr.dbg.pause(true); nr.startShow()
+    nr.S.strokes = 60; nr.S.stamps = 14; nr.dbg.pause(true); nr.startShow()
   }, [plan, themeId])
   await page.waitForTimeout(100)
   const step = async sec => { await page.evaluate(n => { nr.dbg.step(n); nr.dbg.render() }, Math.round(sec * 60)); await page.waitForTimeout(60) }
   await step(3); await page.screenshot({ path: `${ROOT}/shots/${name}-1walk.png` })
   const hidden = await page.evaluate(() => [...document.querySelectorAll('.jc .sc')].map(e => e.textContent).join(''))
   await step(5); await page.screenshot({ path: `${ROOT}/shots/${name}-2judge.png` })
-  await step(5.5); await page.screenshot({ path: `${ROOT}/shots/${name}-3react.png` })
+  await step(6.2); await page.screenshot({ path: `${ROOT}/shots/${name}-3react.png` })
   const mid = await page.evaluate(() => ({ splats: nr.SH.splats.length, roses: nr.SH.roses.length, faint: nr.SH.aud.filter(a => a.faint > 0).length, texts: nr.SH.texts.length, expr: nr.SH.expr, tier: nr.S.result.tier, total: nr.S.result.total }))
   await step(3); await page.waitForTimeout(500); await page.screenshot({ path: `${ROOT}/shots/${name}-4result.png` })
   const end = await page.evaluate(() => ({ result: !document.querySelector('#result').hidden, stamp: document.querySelector('#rStamp').textContent, cm: document.querySelectorAll('#rCmts .cm').length, splats: nr.SH.splats.length, roses: nr.SH.roses.length, faint: nr.SH.aud.filter(a => a.faint >= 1).length }))
@@ -212,13 +227,13 @@ async function runShow(page, plan, themeId, name) {
 }
 await t('ショー: 点は発表まで見えない → 低得点はトマトまみれ・泣き顔・大炎上', async () => {
   const r = await runShow(p, { top: 7 }, 'snow', '10-disaster')
-  expect(r.hidden === '???', 'scores visible early: ' + r.hidden)
+  expect(r.hidden === '????', 'scores visible early: ' + r.hidden)
   expect(r.mid.tier === 'disaster' && r.mid.splats >= 8 && r.mid.expr === 'sad' && r.mid.texts > 0, JSON.stringify(r.mid))
-  expect(r.end.result && r.end.stamp === '大炎上' && r.end.cm === 3, JSON.stringify(r.end)); return { mid: r.mid, end: r.end }
+  expect(r.end.result && r.end.stamp === '大炎上' && r.end.cm === 4, JSON.stringify(r.end)); return { mid: r.mid, end: r.end }
 })
 await t('コメントは審査員自身の点に合う（10点なのに低評価を言わない）', async () => {
-  const r = await p.evaluate(() => { nr.S.result = { ...nr.S.result, scores: [1, 2, 10], total: 13, tier: 'boo', special: null }; document.querySelector('#result').hidden = false; nr.fillResult(); return [...document.querySelectorAll('#rCmts .cm p')].map(e => e.textContent) })
-  const robo = r[2]; expect(!/低|修理|ぬり残し を 多数/.test(robo), robo); return robo
+  const r = await p.evaluate(() => { nr.S.result = { ...nr.S.result, scores: [1, 2, 10, 1], total: 14, tier: 'boo', special: null }; document.querySelector('#result').hidden = false; nr.fillResult(); return [...document.querySelectorAll('#rCmts .cm p')].map(e => e.textContent) })
+  const robo = r[2]; expect(r.length === 4 && !/低|修理|ぬり残し を 多数/.test(robo), robo); return robo
 })
 await t('大炎上では空から巨大トマトが落ちる', async () => { const n = await p.evaluate(() => nr.SH.splats.filter(s => s.r >= 80).length); expect(n === 1, n) })
 await t('ショー: 高得点はバラ・失神する観客・ハートの目・伝説', async () => {
@@ -311,7 +326,7 @@ const wp = await open(wb, { isMobile: true, hasTouch: true, deviceScaleFactor: 2
 await t('WebKit: 起動してタッチでぬれる', async () => {
   await wp.tap('#bStart'); await wp.waitForFunction(() => !document.querySelector('#bThemeGo').disabled); await wp.tap('#bThemeGo')
   const s = await wp.evaluate(() => { const r = document.querySelector('#paint').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height * 380 / 560].map((v, i) => i ? v : v - r.width * 28 / 300) })
-  await wp.click('[data-tool="bucket"]'); await wp.touchscreen.tap(...s)
+  await pick(wp, '[data-tool="bucket"]'); await wp.touchscreen.tap(...s)
   const c = await wp.evaluate(() => nr.coverage(nr.S.outfit, 'bottom')); expect(c > 0.97, c); return c
 })
 await t('WebKit: ショーから結果まで通る', async () => {

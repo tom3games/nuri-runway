@@ -216,6 +216,7 @@ function analyze(outfit = S.outfit) {
   }
   return st
 }
+const jkScore = v => v < 7 ? v - 1.5 : v
 // 採点（同じ絵なら同じ点）
 function scoreFrom(st, theme, seed = 1) {
   const cov = PARTS.reduce((a, p) => a + PART_W[p.id] * st.cov[p.id], 0)
@@ -227,10 +228,16 @@ function scoreFrom(st, theme, seed = 1) {
   const detail = Math.min(1, Math.log10(1 + st.strokes + st.stamps * 0.5 + st.buckets * 0.5) / 1.6)
   const cs = nColors === 0 ? 0 : nColors === 1 ? 0.15 : nColors === 2 ? 0.5 : nColors <= 6 ? 1 : nColors <= 8 ? 0.8 : 0.6
   const varParts = Math.min(1, Math.max(0, doms.size - 1) / 3)
+  // メリハリ: トップスとボトムス・トップスとうで・ボトムスとくつの主な色がどれだけ違うか
+  const dom = id => { const h = st.histP[id]; return st.cov[id] > 0.3 ? h.indexOf(Math.max(...h)) : -1 }
+  const pairs = [['top', 'bottom'], ['top', 'arms'], ['bottom', 'shoes'], ['top', 'hair']]
+  const contrast = pairs.reduce((a, [p1, p2]) => { const c1 = dom(p1), c2 = dom(p2); if (c1 < 0 || c2 < 0) return a; const A = PALETTE[c1].rgb, B = PALETTE[c2].rgb; return a + Math.min(1, Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]) / 260) }, 0) / pairs.length
   const raw = [
     10 * Math.pow(cov, 0.7) * (0.1 + 0.9 * Math.min(1, themeShare / 0.85)),
     10 * Math.pow(cov, 0.8) * (0.45 * cs + 0.3 * detail + 0.25 * varParts),
     10 * Math.pow(0.45 * cov + 0.55 * minCov, 1.3),
+    // 辛口JK: 部位どうしの色の差（メリハリ）・柄（スタンプ）・色は2〜5色がちょうどいい。7点に届かない絵にはさらに辛い
+    jkScore(10 * Math.pow(cov, 0.8) * (0.4 * contrast + 0.35 * Math.min(1, st.stamps / 12) + 0.25 * (nColors >= 2 && nColors <= 5 ? 1 : nColors === 6 ? 0.75 : 0.25))),
   ]
   const r = rng(seed)
   const scores = raw.map(v => cov < 0.02 ? 0 : clamp(Math.round(v + (r() - 0.5) * 1.4), 0, 10))
@@ -373,6 +380,7 @@ const FACES = {
   mc: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#5b3df5"/><circle cx="32" cy="36" r="17" fill="#f6d2b6"/><path d="M14 26c4-14 32-14 36 0-8-5-28-5-36 0z" fill="#1d1424"/><rect x="18" y="8" width="28" height="10" rx="3" fill="#1d1424"/><rect x="12" y="16" width="40" height="5" rx="2.5" fill="#1d1424"/><circle cx="26" cy="35" r="2.4" fill="#1d1424"/><circle cx="38" cy="35" r="2.4" fill="#1d1424"/><path d="M22 43q5 3 10 0q5 3 10 0" stroke="#1d1424" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M27 48q5 4 10 0" stroke="#c0392b" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M24 56h16l-8 6z" fill="#f5c84c"/></svg>`,
   madame: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#8e44ad"/><circle cx="32" cy="22" r="16" fill="#c7a5ff"/><circle cx="20" cy="30" r="9" fill="#c7a5ff"/><circle cx="44" cy="30" r="9" fill="#c7a5ff"/><circle cx="32" cy="38" r="14" fill="#f6d2b6"/><rect x="20" y="31" width="10" height="7" rx="3" fill="#1d1424"/><rect x="34" y="31" width="10" height="7" rx="3" fill="#1d1424"/><path d="M30 34h4" stroke="#1d1424" stroke-width="2"/><path class="m-ok" d="M27 45q5 4 10 0" stroke="#c0182e" stroke-width="3" fill="none" stroke-linecap="round"/><path class="m-bad" d="M27 47q5-4 10 0" stroke="#c0182e" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="18" cy="44" r="3" fill="#f5c84c"/><circle cx="46" cy="44" r="3" fill="#f5c84c"/></svg>`,
   gal: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#ff4f9a"/><path d="M12 40c-2-22 12-30 20-30s22 8 20 30l-6-2-2-14H18l-2 14z" fill="#ffd36b"/><circle cx="32" cy="36" r="14" fill="#f3c2a0"/><path d="M18 24c6-6 22-6 28 0-6 2-22 2-28 0z" fill="#ffd36b"/><circle cx="26" cy="35" r="3" fill="#1d1424"/><circle cx="38" cy="35" r="3" fill="#1d1424"/><path d="M22 31l3-2M42 31l-3-2" stroke="#1d1424" stroke-width="1.6"/><path class="m-ok" d="M27 42q5 6 10 0z" fill="#c0182e"/><path class="m-bad" d="M27 45h10" stroke="#c0182e" stroke-width="3" stroke-linecap="round"/><circle cx="22" cy="41" r="2.6" fill="#ff8fb8"/><circle cx="42" cy="41" r="2.6" fill="#ff8fb8"/><path d="M46 14l3 3-3 3-3-3z" fill="#fff"/></svg>`,
+  jk: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#1b2a6b"/><path d="M13 46c-3-24 6-34 19-34s22 10 19 34l-5-3-1-16H19l-1 16z" fill="#25232b"/><circle cx="32" cy="34" r="13" fill="#f6d2b6"/><path d="M19 30c2-10 24-12 26 0-6-4-20-4-26 0z" fill="#25232b"/><path d="M22 47l10 9 10-9 6 5-16 8-16-8z" fill="#fff"/><path d="M29 52l3 5 3-5z" fill="#e53935"/><path class="m-ok" d="M24 33h5M35 33h5" stroke="#1d1424" stroke-width="2.4" stroke-linecap="round"/><path class="m-bad" d="M24 31l5 2M40 31l-5 2" stroke="#1d1424" stroke-width="2.4" stroke-linecap="round"/><circle cx="27" cy="35" r="1.8" fill="#1d1424"/><circle cx="37" cy="35" r="1.8" fill="#1d1424"/><path class="m-ok" d="M28 41q4 2 8-1" stroke="#c0182e" stroke-width="2.4" fill="none" stroke-linecap="round"/><path class="m-bad" d="M28 42h8" stroke="#c0182e" stroke-width="2.4" stroke-linecap="round"/><rect x="40" y="10" width="9" height="15" rx="2" fill="#ff7eb6" transform="rotate(18 44 17)"/></svg>`,
   robo: `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#2c1a8f"/><path d="M32 8v8" stroke="#9aa0a8" stroke-width="3"/><circle cx="32" cy="7" r="3.4" fill="#ff4f9a"/><rect x="14" y="16" width="36" height="32" rx="7" fill="#c9d0db"/><rect x="18" y="22" width="28" height="13" rx="4" fill="#1d1424"/><circle class="m-ok" cx="26" cy="28.5" r="3.4" fill="#5cf2a5"/><circle class="m-ok" cx="38" cy="28.5" r="3.4" fill="#5cf2a5"/><path class="m-bad" d="M22 26l8 5M30 26l-8 5M34 26l8 5M42 26l-8 5" stroke="#ff4040" stroke-width="2.4"/><rect x="22" y="40" width="20" height="4" rx="2" fill="#7b8291"/><rect x="10" y="26" width="4" height="10" rx="2" fill="#9aa0a8"/><rect x="50" y="26" width="4" height="10" rx="2" fill="#9aa0a8"/></svg>`,
 }
 function faceEl(id, mood = 'ok') { return `<div class="face" data-mood="${mood}">${FACES[id]}</div>` }
@@ -442,7 +450,18 @@ function buildPaintUI() {
   $('#pal').innerHTML = PALETTE.map((p, i) => `<button class="sw${S.color === i ? ' on' : ''}" type="button" data-color="${i}" style="background:${p.c}" aria-label="${S.lang === 'ja' ? p.ja : p.en}"></button>`).join('')
   buildSub(); updateParts()
 }
+function openPop(id) {
+  for (const [pid, bid] of [['popTool', 'bTool'], ['popColor', 'bColor']]) { const on = pid === id && $('#' + pid).hidden; $('#' + pid).hidden = !on; $('#' + bid).classList.toggle('open', on) }
+}
+function closePops() { openPop(null) }
+function syncTbar() {
+  const icon = S.tool === 'stamp' ? STAMP_ICONS[S.stamp] : TOOL_ICONS[S.tool]
+  $('#toolIc').innerHTML = icon
+  $('#toolLab').textContent = S.tool === 'stamp' ? T('stamps')[S.stamp] : T('tools')[S.tool]
+  $('#colorCur').style.background = PALETTE[S.color].c
+}
 function buildSub() {
+  syncTbar()
   const row = $('#subRow')
   if (S.tool === 'stamp') row.innerHTML = Object.keys(STAMP_ICONS).map(k => `<button class="tool${S.stamp === k ? ' on' : ''}" type="button" data-stamp="${k}" aria-label="${T('stamps')[k]}"><svg viewBox="0 0 24 24">${STAMP_ICONS[k]}</svg><span>${T('stamps')[k]}</span></button>`).join('')
   else if (S.tool === 'bucket') row.innerHTML = `<button class="tool on" type="button" disabled style="opacity:1;background:transparent;color:inherit"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="${PALETTE[S.color].c}" stroke="#fff"/></svg><span>${S.lang === 'ja' ? PALETTE[S.color].ja : PALETTE[S.color].en}</span></button>`
@@ -450,31 +469,43 @@ function buildSub() {
 }
 let activePart = null
 function setActivePart(id) { activePart = id; for (const b of $$('.pt')) b.classList.toggle('on', b.dataset.part === (S.zoom || '') && (!!S.zoom || !b.dataset.part)) }
-// 表示範囲（設計座標）。パーツを選ぶとそのパーツへ寄る
+// 表示範囲。キャンバスを1〜2枚の窓（panel）に割り、それぞれに設計座標の範囲を映す
+// 腕と靴は左右が離れているので、拡大中は2枚の窓に左右を並べて両方を大きく映す
 const FULL = { x: 0, y: 0, w: MW, h: MH }
-S.vw = { ...FULL }; S.vwT = { ...FULL }; S.zoom = null
-// 腕と靴は左右で1パーツ。拡大は片側ずつ（左→右→全体）
-const SIDES = { arms: { l: { x: 46, y: 142, w: 52, h: 194 }, r: { x: 202, y: 142, w: 52, h: 194 } }, shoes: { l: { x: 82, y: 486, w: 66, h: 44 }, r: { x: 152, y: 486, w: 66, h: 44 } } }
-function zoomRect(id, side) {
-  if (!id) return { ...FULL }
-  const b = (SIDES[id] && side) ? SIDES[id][side] : PART[id].box, pad = 14, cx = b.x + b.w / 2, cy = b.y + b.h / 2
-  let w = Math.max(b.w + pad * 2, (b.h + pad * 2) * MW / MH, MW / 3.2); w = Math.min(w, MW)
-  const h = w * MH / MW
-  return { x: clamp(cx - w / 2, 0, MW - w), y: clamp(cy - h / 2, -20, MH - h + 20), w, h }
+S.zoom = null
+S.pan = [{ f: { x: 0, y: 0, w: 1, h: 1 }, vw: { ...FULL }, vwT: { ...FULL } }]
+const SIDES = { arms: [{ x: 46, y: 142, w: 52, h: 194 }, { x: 202, y: 142, w: 52, h: 194 }], shoes: [{ x: 82, y: 486, w: 66, h: 44 }, { x: 152, y: 486, w: 66, h: 44 }] }
+// 箱 b を、縦横比 asp（幅/高さ）の窓にちょうど収める範囲。拡大は全体の3.5倍まで
+function fitRect(b, asp, fw, pad = 14) {
+  if (!b) return { ...FULL }
+  const cx = b.x + b.w / 2, cy = b.y + b.h / 2
+  let w = Math.max(b.w + pad * 2, (b.h + pad * 2) * asp, MW * fw / 3.5)
+  const h = w / asp
+  return { x: cx - w / 2, y: cy - h / 2, w, h }
 }
-function setZoom(id, side) {
-  S.zoom = id || null; S.side = S.zoom && SIDES[S.zoom] ? (side || 'l') : null
-  S.vwT = zoomRect(S.zoom, S.side); activePart = S.zoom
+const ASP = MW / MH
+function panelsFor(id) {
+  if (!id) return [{ f: { x: 0, y: 0, w: 1, h: 1 }, vwT: { ...FULL } }]
+  if (!SIDES[id]) return [{ f: { x: 0, y: 0, w: 1, h: 1 }, vwT: fitRect(PART[id].box, ASP, 1) }]
+  // 左右に並べるか上下に並べるか、大きく映せる方を選ぶ
+  const opts = [[{ x: 0, y: 0, w: .5, h: 1 }, { x: .5, y: 0, w: .5, h: 1 }], [{ x: 0, y: 0, w: 1, h: .5 }, { x: 0, y: .5, w: 1, h: .5 }]]
+  let best = null
+  for (const fs of opts) {
+    const ps = fs.map((f, i) => ({ f, vwT: fitRect(SIDES[id][i], ASP * f.w / f.h, f.w, 8) }))
+    const zoom = f => ps[0].f.w / ps[0].vwT.w
+    if (!best || zoom() > best.z) best = { ps, z: zoom() }
+  }
+  return best.ps
+}
+function setZoom(id) {
+  S.zoom = id || null; activePart = S.zoom
+  const next = panelsFor(S.zoom)
+  // 窓の数が同じなら寄せていく。数が変わる時はその場で切り替える
+  if (next.length === S.pan.length) S.pan.forEach((p, i) => { p.f = next[i].f; p.vwT = next[i].vwT })
+  else S.pan = next.map(p => ({ ...p, vw: { ...p.vwT } }))
   setActivePart(S.zoom); paintDirty = true
-  for (const b of $$('.pt .side')) b.remove()
-  if (S.side) { const b = $(`.pt[data-part="${S.zoom}"]`); if (b) b.insertAdjacentHTML('afterbegin', `<b class="side">${T('side')[S.side]}</b>`) }
 }
-function cycleZoom(id) {
-  if (!id) return setZoom(null)
-  if (id !== S.zoom) return setZoom(id, 'l')
-  if (S.side === 'l') return setZoom(id, 'r')
-  setZoom(null)
-}
+function cycleZoom(id) { setZoom(id && id !== S.zoom ? id : null) }
 function updateParts() {
   if (!S.outfit) return
   for (const b of $$('.pt')) { if (!b.dataset.part) continue; const c = coverage(S.outfit, b.dataset.part); b.querySelector('i').style.width = Math.round(c * 100) + '%'; b.classList.toggle('full', c > 0.97); b.dataset.cov = c.toFixed(3) }
@@ -494,42 +525,68 @@ function renderPaint(t) {
   if (!paintDirty || $('#vPaint').hidden) return; paintDirty = false
   const cv = $('#paint'), x = cv.getContext('2d')
   x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height)
-  // 表示範囲を目標へなめらかに寄せる
-  const v = S.vw, g = S.vwT, k = 0.22
-  for (const key of ['x', 'y', 'w', 'h']) { v[key] += (g[key] - v[key]) * k; if (Math.abs(g[key] - v[key]) < 0.05) v[key] = g[key] }
-  if (v.x !== g.x || v.y !== g.y || v.w !== g.w) paintDirty = true
-  const zs = pScale * MW / v.w
-  x.setTransform(zs, 0, 0, zs, -v.x * zs, -v.y * zs)
-  // 床の影
-  x.fillStyle = 'rgba(60,30,70,.12)'; x.beginPath(); x.ellipse(150, 532, 80, 10, 0, 0, 7); x.fill()
-  drawModel(x, S.outfit, { expr: 'neutral', t })
-  // 拡大中は他のパーツを薄くして、ぬれる場所を分かりやすく
-  if (S.zoom) { x.save(); const m = new Path2D(); m.rect(-50, -50, MW + 100, MH + 100); m.addPath(PART[S.zoom].path); x.fillStyle = 'rgba(250,244,236,.62)'; x.fill(m, 'evenodd'); x.restore() }
-  if (activePart) { x.save(); x.setLineDash([6, 5]); x.lineDashOffset = -t * 20; x.strokeStyle = '#ff4f9a'; x.lineWidth = 2; x.stroke(PART[activePart].path); x.restore(); paintDirty = true }
-  if (S.mirror) { x.save(); x.setLineDash([4, 6]); x.strokeStyle = 'rgba(91,61,245,.5)'; x.lineWidth = 1.4; x.beginPath(); x.moveTo(150, 20); x.lineTo(150, 540); x.stroke(); x.restore() }
+  const W = cv.width, H = cv.height
+  for (const p of S.pan) {
+    // 表示範囲を目標へなめらかに寄せる
+    const v = p.vw, g = p.vwT
+    for (const key of ['x', 'y', 'w', 'h']) { v[key] += (g[key] - v[key]) * 0.22; if (Math.abs(g[key] - v[key]) < 0.05) v[key] = g[key] }
+    if (v.x !== g.x || v.y !== g.y || v.w !== g.w) paintDirty = true
+    const px = p.f.x * W, py = p.f.y * H, pw = p.f.w * W, ph = p.f.h * H, zs = pw / v.w
+    x.save(); x.beginPath(); x.rect(px, py, pw, ph); x.clip()
+    x.setTransform(zs, 0, 0, zs, px - v.x * zs, py - v.y * zs)
+    x.fillStyle = 'rgba(60,30,70,.12)'; x.beginPath(); x.ellipse(150, 532, 80, 10, 0, 0, 7); x.fill()
+    drawModel(x, S.outfit, { expr: 'neutral', t })
+    // 拡大中は他のパーツを薄くして、ぬれる場所を分かりやすく
+    if (S.zoom) { const m = new Path2D(); m.rect(-400, -400, MW + 800, MH + 800); m.addPath(PART[S.zoom].path); x.fillStyle = 'rgba(250,244,236,.62)'; x.fill(m, 'evenodd') }
+    if (activePart) { x.save(); x.setLineDash([6, 5]); x.lineDashOffset = -t * 20; x.strokeStyle = '#ff4f9a'; x.lineWidth = 2; x.stroke(PART[activePart].path); x.restore(); paintDirty = true }
+    if (S.mirror) { x.save(); x.setLineDash([4, 6]); x.strokeStyle = 'rgba(91,61,245,.5)'; x.lineWidth = 1.4; x.beginPath(); x.moveTo(150, 20); x.lineTo(150, 540); x.stroke(); x.restore() }
+    x.restore()
+  }
+  // 2枚の時は境目と左右の目印
+  if (S.pan.length > 1) {
+    x.setTransform(1, 0, 0, 1, 0, 0); const b = S.pan[1].f, dpr = W / $('#paint').clientWidth
+    x.strokeStyle = 'rgba(91,61,245,.55)'; x.lineWidth = 3 * dpr; x.beginPath()
+    if (b.x > 0) { x.moveTo(b.x * W, 0); x.lineTo(b.x * W, H) } else { x.moveTo(0, b.y * H); x.lineTo(W, b.y * H) } x.stroke()
+    x.font = `900 ${12 * dpr}px 'Zen Maru Gothic',sans-serif`; x.textBaseline = 'top'
+    S.pan.forEach((p, i) => { const s = T('side')[i ? 'r' : 'l'], tx = p.f.x * W + 8 * dpr, ty = p.f.y * H + 8 * dpr, tw = x.measureText(s).width + 12 * dpr
+      x.fillStyle = '#ff4f9a'; roundRect(x, tx, ty, tw, 20 * dpr, 10 * dpr); x.fill(); x.fillStyle = '#fff'; x.fillText(s, tx + 6 * dpr, ty + 4 * dpr) })
+  }
 }
-function toDesign(e) { const r = $('#paint').getBoundingClientRect(), v = S.vw; return [v.x + (e.clientX - r.left) / r.width * v.w, v.y + (e.clientY - r.top) / r.height * v.h] }
+// 画面の点 → 設計座標。窓を指定しなければ点のある窓を使う（描いている途中は描き始めた窓のまま）
+function panelAt(e) { const r = $('#paint').getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height
+  const i = S.pan.findIndex(p => fx >= p.f.x && fx < p.f.x + p.f.w && fy >= p.f.y && fy < p.f.y + p.f.h); return i < 0 ? 0 : i }
+function toDesign(e, pi = panelAt(e)) {
+  const r = $('#paint').getBoundingClientRect(), p = S.pan[pi] || S.pan[0], v = p.vw
+  const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height
+  return [v.x + (fx - p.f.x) / p.f.w * v.w, v.y + (fy - p.f.y) / p.f.h * v.h]
+}
 function bindPaint() {
-  const cv = $('#paint'); let pid = null
-  cv.addEventListener('pointerdown', e => { Snd.init(); if (pid !== null) return; const [x, y] = toDesign(e); if (strokeBegin(x, y)) { pid = e.pointerId; try { cv.setPointerCapture(pid) } catch (er) {} } e.preventDefault() })
-  cv.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; for (const ev of (evs.length ? evs : [e])) { const [x, y] = toDesign(ev); strokeMove(x, y) } })
+  const cv = $('#paint'); let pid = null, ppi = 0
+  cv.addEventListener('pointerdown', e => { Snd.init(); if (pid !== null) return; ppi = panelAt(e); const [x, y] = toDesign(e, ppi); if (strokeBegin(x, y)) { pid = e.pointerId; try { cv.setPointerCapture(pid) } catch (er) {} } e.preventDefault() })
+  cv.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; for (const ev of (evs.length ? evs : [e])) { const [x, y] = toDesign(ev, ppi); strokeMove(x, y) } })
   const end = e => { if (e.pointerId !== pid) return; pid = null; strokeEnd() }
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end)
   $('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (!b) return; cycleZoom(b.dataset.part); Snd.sfx(S.zoom ? 'spin' : 'tap') })
-  $('#toolRow').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (!b) return; S.tool = b.dataset.tool; for (const x of $$('[data-tool]')) x.classList.toggle('on', x === b); buildSub(); Snd.sfx('tap') })
+  $('#bTool').addEventListener('click', () => { openPop('popTool'); Snd.sfx('tap') })
+  $('#bColor').addEventListener('click', () => { openPop('popColor'); Snd.sfx('tap') })
+  // 道具を選ぶ。太さや柄を選ぶ段がある道具は開いたまま、無い道具（バケツ）は閉じる
+  $('#toolRow').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (!b) return; S.tool = b.dataset.tool; for (const x of $$('[data-tool]')) x.classList.toggle('on', x === b); buildSub(); Snd.sfx('tap'); if (S.tool === 'bucket') closePops() })
   $('#subRow').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return
     if (b.dataset.size) S.size = +b.dataset.size; if (b.dataset.stamp) S.stamp = b.dataset.stamp
-    buildSub(); Snd.sfx('tap')
+    buildSub(); Snd.sfx('tap'); closePops()
   })
-  $('#pal').addEventListener('click', e => { const b = e.target.closest('.sw'); if (!b) return; S.color = +b.dataset.color; for (const x of $$('.sw')) x.classList.toggle('on', x === b); if (S.tool === 'eraser') { S.tool = 'pen'; buildPaintUI() } else buildSub(); Snd.sfx('tap') })
+  $('#pal').addEventListener('click', e => { const b = e.target.closest('.sw'); if (!b) return; S.color = +b.dataset.color; for (const x of $$('.sw')) x.classList.toggle('on', x === b); if (S.tool === 'eraser') { S.tool = 'pen'; buildPaintUI() } else buildSub(); Snd.sfx('tap'); closePops() })
+  // パネルの外（キャンバス・パーツ）を触ったら閉じる
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.pop,#bTool,#bColor')) closePops() }, true)
+  window.addEventListener('keydown', e => { if (e.key === 'Escape') closePops() })
   $('#bMirror').addEventListener('click', () => { S.mirror = !S.mirror; $('#bMirror').classList.toggle('on', S.mirror); $('#bMirror').setAttribute('aria-pressed', S.mirror); paintDirty = true; Snd.sfx('tap') })
   $('#bUndo').addEventListener('click', doUndo)
   window.addEventListener('keydown', e => { if (!$('#vPaint').hidden && (e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); doUndo() } })
 }
 function startPaint(fresh) {
   if (fresh || !S.outfit) { S.outfit = newOutfit(); S.undo = []; S.strokes = S.stamps = S.buckets = 0; $('#bUndo').disabled = true }
-  setZoom(null); S.vw = { ...FULL }; go('vPaint'); updateParts()
+  S.pan = []; setZoom(null); go('vPaint'); updateParts()
   let seen = null; try { seen = localStorage.getItem('nr.tut') } catch (e) {}
   if (!seen) openTut()
 }
@@ -601,11 +658,11 @@ function startShow() {
   ev(5.0, () => { SH.walking = false; SH.turnT = 0; Snd.sfx('spin') })
   ev(6.0, () => { $('#mcTxt').textContent = T('judging'); $('#judges').classList.remove('off'); Snd.setTrack(null) })
   ev(6.3, () => Snd.sfx('roll'))
-  R.scores.forEach((s, i) => ev(7.9 + i * 0.9, () => revealJudge(i, s)))
-  ev(10.6, () => { $('#totalNum').textContent = R.total; $('#totalBox').classList.add('on'); Snd.sfx('hit'); SH.shake = 10; SH.flash = 1 })
-  ev(11.0, () => startReaction(R.tier))
-  ev(13.6, () => $('#totalBox').classList.remove('on'))
-  ev(16.0, () => finishShow())
+  R.scores.forEach((s, i) => ev(7.9 + i * 0.85, () => revealJudge(i, s)))
+  ev(11.4, () => { $('#totalNum').textContent = R.total; $('#totalBox').classList.add('on'); Snd.sfx('hit'); SH.shake = 10; SH.flash = 1 })
+  ev(11.8, () => startReaction(R.tier))
+  ev(14.4, () => $('#totalBox').classList.remove('on'))
+  ev(16.8, () => finishShow())
 }
 function revealJudge(i, s) {
   const el = $(`.jc[data-j="${i}"] .sc`); el.classList.remove('hidden'); el.classList.add('flip'); el.innerHTML = `<span>${s}</span>`
@@ -662,10 +719,10 @@ function skipShow() {
   if (SH.finished) return
   // 未実行の出来事を全部すませてから結果へ
   SH.walking = false; SH.z = 1
-  for (const e of SH.events) if (!e.done && e.t <= 11.0) { e.done = true; e.fn() }
+  for (const e of SH.events) if (!e.done && e.t <= 11.8) { e.done = true; e.fn() }
   // 投げ物は着弾済みにする
   for (const e of SH.events) if (!e.done) { e.done = true; const before = SH.proj.length; e.fn(); if (SH.proj.length > before) landAll() }
-  landAll(); SH.t = Math.max(SH.t, 16); finishShow()
+  landAll(); SH.t = Math.max(SH.t, 16.8); finishShow()
 }
 function landAll() { for (const p of SH.proj.splice(0)) land(p) }
 function land(p) {
@@ -842,8 +899,8 @@ async function saveImage() {
   x.save(); x.translate(820, 330); x.rotate(-0.14); x.strokeStyle = x.fillStyle = { disaster: '#ff5a3c', boo: '#ff8a5c', meh: '#c8bcd2', great: '#f5c84c', legend: '#ffffff' }[R.tier]
   x.lineWidth = 10; x.font = "84px 'Dela Gothic One',sans-serif"; const tw = x.measureText(S.lang === 'ja' ? tier.ja : tier.en).width + 50
   roundRect(x, -tw / 2, -70, tw, 120, 18); x.stroke(); x.fillText(S.lang === 'ja' ? tier.ja : tier.en, 0, 18); x.restore()
-  x.fillStyle = '#fff'; x.font = "900 40px 'Zen Maru Gothic',sans-serif"; x.fillText(`${T('total')} ${R.total} / 30`, 540, 1225)
-  x.font = "900 26px 'Zen Maru Gothic',sans-serif"; x.fillStyle = '#d9c3e0'
+  x.fillStyle = '#fff'; x.font = "900 40px 'Zen Maru Gothic',sans-serif"; x.fillText(`${T('total')} ${R.total} / ${MAX_SCORE}`, 540, 1225)
+  x.font = "900 24px 'Zen Maru Gothic',sans-serif"; x.fillStyle = '#d9c3e0'
   x.fillText(JUDGES.map((j, i) => `${S.lang === 'ja' ? j.ja.split(' ').pop() : j.en.split(' ').pop()} ${R.scores[i]}`).join('   '), 540, 1275)
   x.fillText('tom3games.github.io/nuri-runway', 540, 1322)
   const blob = await new Promise(r => c.toBlob(r, 'image/png'))
@@ -927,7 +984,7 @@ window.nr = {
   bucket: (id, c) => { pushUndo([id]); bucket(id, c); S.buckets++; updateParts(); paintDirty = true },
   stroke: (pts, opt = {}) => { Object.assign(S, opt); if (!strokeBegin(...pts[0])) return false; for (const p of pts.slice(1)) strokeMove(...p); strokeEnd(); return true },
   setTheme: id => { S.theme = THEMES.find(t => t.id === id); showTheme(false) },
-  setZoom, PS,
+  setZoom, PS, closePops,
   dbg: { pause: v => { SH.paused = v }, step: n => { for (let i = 0; i < n; i++) updateShow(STEP) }, render: () => renderShow() },
 }
 boot()
