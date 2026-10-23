@@ -135,6 +135,18 @@ await t('全体ボタンで元に戻る', async () => {
   await p.click('.pt.all'); await p.waitForTimeout(700); const v = await p.evaluate(() => ({ ...nr.S.vw, zoom: nr.S.zoom }))
   expect(v.zoom === null && Math.abs(v.w - 300) < 0.5 && Math.abs(v.y) < 0.5, JSON.stringify(v))
 })
+await t('ブラウザの拡大が起きない（viewport・ピンチ・Ctrl+ホイール・Ctrl+プラス）', async () => {
+  const r = await p.evaluate(() => {
+    const vp = document.querySelector('meta[name=viewport]').content
+    const ev = (o) => { o.cancelable = true; return o }
+    const g = new Event('gesturestart', { cancelable: true }); document.dispatchEvent(g)
+    const w = new WheelEvent('wheel', ev({ ctrlKey: true, deltaY: -10, bubbles: true })); window.dispatchEvent(w)
+    const k = new KeyboardEvent('keydown', ev({ key: '+', ctrlKey: true, bubbles: true })); window.dispatchEvent(k)
+    const ta = getComputedStyle(document.documentElement).touchAction
+    return { vp, gesture: g.defaultPrevented, wheel: w.defaultPrevented, key: k.defaultPrevented, ta }
+  })
+  expect(/user-scalable=no/.test(r.vp) && /maximum-scale=1/.test(r.vp) && r.gesture && r.wheel && r.key && r.ta === 'manipulation', JSON.stringify(r)); return r
+})
 await t('文字選択（青い範囲）が出ない設定になっている', async () => {
   const r = await p.evaluate(() => { const st = getComputedStyle(document.body); return st.userSelect || st.webkitUserSelect })
   expect(r === 'none', r); return r
@@ -270,6 +282,29 @@ for (const [w, h, name] of [[360, 640, 'small'], [844, 390, 'land'], [1440, 900,
 }
 await browser.close()
 
+// ---------- どの画面も一画面に収まる（上下にスワイプしなくていい）
+const fit = q => q.evaluate(() => {
+  const H = innerHeight, de = document.documentElement, over = []
+  if (de.scrollHeight > H + 1) over.push('page:' + de.scrollHeight)
+  for (const el of document.querySelectorAll('#result,.panel')) if (el.offsetParent && el.scrollHeight > el.clientHeight + 1 && getComputedStyle(el).overflowY !== 'visible') over.push(el.id || el.className)
+  for (const el of document.querySelectorAll('main:not([hidden]) button,main:not([hidden]) canvas')) { if (!el.offsetParent) continue; const r = el.getBoundingClientRect(); if (r.bottom > H + 1 || r.top < -1) over.push((el.id || el.className) + ':' + Math.round(r.top) + '-' + Math.round(r.bottom)) }
+  return { H, over: over.slice(0, 6) }
+})
+const fb = await chromium.launch()
+for (const [w, h, name] of [[360, 640, 'small'], [390, 844, 'phone'], [844, 390, 'land'], [667, 375, 'land-se'], [768, 1024, 'tab'], [1440, 900, 'pc']]) {
+  const q = await open(fb, { viewport: { width: w, height: h } })
+  const chk = async (view) => { const r = await fit(q); await q.screenshot({ path: `${ROOT}/shots/40-fit-${name}-${view}.png` }); return r }
+  const res = {}
+  res.title = await chk('title')
+  await q.click('#bHow'); res.how = await chk('how'); await q.click('#bHowBack')
+  await q.click('#bStart'); await q.waitForFunction(() => !document.querySelector('#bThemeGo').disabled); res.theme = await chk('theme')
+  await q.click('#bThemeGo'); await q.waitForTimeout(200); res.paint = await chk('paint')
+  await q.evaluate(() => { nr.bucket('top', 4); nr.dbg.pause(true); nr.startShow(); nr.dbg.step(60 * 17); nr.dbg.render() }); await q.waitForTimeout(600); res.result = await chk('result')
+  for (const [v, r] of Object.entries(res)) await t(`一画面に収まる ${name} ${w}x${h} ${v}`, async () => { expect(!r.over.length, JSON.stringify(r)) })
+  await q.close()
+}
+await fb.close()
+
 // ---------- WebKit（iPhone 相当）でタッチの通し
 const wb = await webkit.launch()
 const wp = await open(wb, { isMobile: true, hasTouch: true, deviceScaleFactor: 2 })
@@ -282,6 +317,14 @@ await t('WebKit: 起動してタッチでぬれる', async () => {
 await t('WebKit: ショーから結果まで通る', async () => {
   await wp.evaluate(() => { nr.dbg.pause(true); nr.startShow(); nr.dbg.step(60 * 17); nr.dbg.render() }); await wp.waitForTimeout(500)
   expect(await wp.isVisible('#result'), 'no result'); await wp.screenshot({ path: ROOT + '/shots/30-webkit-result.png' }); return await wp.textContent('#rStamp')
+})
+await t('WebKit: 2本指で動かしても拡大されない（タッチの既定動作を止める）', async () => {
+  const r = await wp.evaluate(() => {
+    const el = document.querySelector('#paint'), e = new Event('touchmove', { cancelable: true, bubbles: true })
+    Object.defineProperty(e, 'touches', { value: [{}, {}] }); el.dispatchEvent(e)
+    return { prevented: e.defaultPrevented, scale: window.visualViewport ? visualViewport.scale : 1 }
+  })
+  expect(r.prevented && r.scale === 1, JSON.stringify(r)); return r
 })
 await t('WebKit: エラーなし', async () => { expect(wp.errs.length === 0, wp.errs.join('|')) })
 await wb.close()

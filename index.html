@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ぬりぬりランウェイ</title>
 <meta name="description" content="マネキンをぬって服を作り、ランウェイへ。3人の審査員が採点し、点が低いと観客からトマトが飛んでくる。ブラウザで遊べるお絵かきファッションショー。">
 <meta name="theme-color" content="#1a0b24">
@@ -24,7 +24,7 @@
   --pink:#ff4f9a;--pink-dk:#a3185a;--gold:#f5c84c;--gold-dk:#9a7414;--violet:#5b3df5;--violet-dk:#2c1a8f;
   --disp:'Dela Gothic One',sans-serif;
 }
-html{background:var(--night)}
+html{background:var(--night);touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{min-height:100%;color:var(--paper);
   font-family:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif;-webkit-tap-highlight-color:transparent;
   word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere}
@@ -55,8 +55,8 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 @keyframes cheer{to{transform:translateY(-6px)}}
 
 /* ---------- 共通 */
-.view{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:max(64px,calc(env(safe-area-inset-top) + 56px)) 16px max(24px,calc(env(safe-area-inset-bottom) + 16px));gap:16px}
-.wrap{width:min(540px,100%);display:flex;flex-direction:column;align-items:center;gap:16px}
+.view{height:100svh;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:max(64px,calc(env(safe-area-inset-top) + 56px)) 16px max(24px,calc(env(safe-area-inset-bottom) + 16px));gap:16px}
+.wrap{width:min(540px,100%);display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.8vh,16px);min-height:0;max-height:100%}
 .view:not([hidden]) .wrap{animation:enter .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;font-size:18px;letter-spacing:.05em;border:0;border-radius:16px;min-height:56px;padding:0 22px;cursor:pointer;width:100%;
@@ -82,13 +82,14 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 
 /* ---------- タイトル */
 #vTitle{justify-content:center}
+#vTitle .wrap{height:100%}
 .logo{text-align:center;line-height:1}
-.logo .main{font-family:var(--disp);font-size:clamp(40px,11.5vw,74px);letter-spacing:.02em;color:#fff;
+.logo .main{font-family:var(--disp);font-size:min(11.5vw,7vh,74px);letter-spacing:.02em;color:#fff;
   text-shadow:0 4px 0 var(--pink-dk),0 0 24px rgba(255,79,154,.6);display:block}
 .logo .main b{color:var(--gold);font-weight:400;white-space:nowrap}
 .logo .sub{display:inline-block;margin-top:12px;font-weight:900;font-size:clamp(14px,4vw,18px);padding:6px 14px;border-radius:99px;background:var(--pink);color:#fff;box-shadow:0 3px 0 var(--pink-dk)}
-.heroBox{position:relative;width:min(300px,62vw);aspect-ratio:300/430}
-.heroBox canvas{width:100%;height:100%;display:block}
+.heroBox{position:relative;flex:1 1 0;min-height:60px;width:100%;display:flex;justify-content:center}
+.heroBox canvas{height:100%;width:auto;max-width:100%;aspect-ratio:600/860;display:block;object-fit:contain}
 .mcLine{display:flex;gap:10px;align-items:flex-start;width:100%}
 .mcLine .mcFace{flex:none;width:52px;height:52px}
 .bubble{position:relative;background:var(--paper);color:var(--ink);border-radius:16px;padding:12px 14px;font-weight:700;font-size:15px;line-height:1.6;box-shadow:0 4px 0 #b8a796}
@@ -233,7 +234,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 /* ---------- 遊び方・チュートリアル・確認 */
 .panel{width:100%;background:rgba(26,11,36,.8);border-radius:20px;padding:18px;box-shadow:inset 0 0 0 2px rgba(255,246,238,.18)}
 .panel h2{font-family:var(--disp);font-weight:400;font-size:26px;color:var(--gold);margin-bottom:10px}
-.panel ol{padding-left:1.3em;display:flex;flex-direction:column;gap:10px;line-height:1.7;font-weight:700}
+.panel ol{padding-left:1.3em;display:flex;flex-direction:column;gap:clamp(4px,1vh,10px);line-height:1.6;font-weight:700;font-size:clamp(12px,1.9vh,15px)}
 .jlist{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 .jlist div{text-align:center;font-size:12px;font-weight:900}
 .jlist .face{width:56px;height:56px;margin:0 auto 4px}
@@ -244,6 +245,54 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .modal p{font-weight:700;line-height:1.6}
 .modal .step{font-weight:900;font-size:12px;color:var(--violet)}
 .modal .btn.ghost{color:var(--ink);background:transparent;box-shadow:inset 0 0 0 2px rgba(29,20,36,.3)}
+/* 背の低い横画面: 2列に組んで一画面に収める */
+@media (max-height:560px) and (min-aspect-ratio:1/1){
+  .view{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  #vTitle .wrap{width:min(860px,100%);height:100%;display:grid;grid-template-columns:minmax(0,.8fr) 1fr;grid-template-rows:minmax(0,1fr) auto auto auto auto minmax(0,1fr);gap:8px 20px;align-items:center}
+  #vTitle .heroBox{grid-column:1;grid-row:1/7;height:100%;min-height:0;overflow:hidden}
+  #vTitle .logo{grid-column:2;grid-row:2;padding-right:100px}
+  #vTitle .mcLine{grid-column:2;grid-row:3}
+  #vTitle .wrap>.btn{grid-column:2}
+  #vTitle #bStart{grid-row:4}
+  #vTitle #bHow{grid-row:5;min-height:42px}
+  #vTitle #bStart{min-height:52px}
+  #vTitle .logo .main{font-size:min(6vw,11vh,56px)}
+  #vTitle .logo .sub{margin-top:6px;font-size:13px}
+  #vTitle .bubble{font-size:12px}
+  .bubble{font-size:13px;padding:8px 12px;line-height:1.5}
+  #vTheme .mcLine{display:none}
+  #vTheme .wrap{width:min(640px,100%)}
+  .themeCard{padding:14px 16px}
+  #vTheme .btn.pink{min-height:52px}
+  #vHow .wrap{width:min(900px,100%);height:100%;display:grid;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  #vHow .panel{display:grid;grid-template-columns:1fr 200px;gap:14px;padding:12px 16px;min-height:0;margin-right:110px}
+  #vHow .panel h2{grid-column:1/-1;font-size:20px;margin:0}
+  #vHow .jlist{margin:0;grid-template-columns:1fr;align-content:start}
+  #vHow .jlist div{display:grid;grid-template-columns:40px 1fr;text-align:left;gap:0 8px;align-items:center}
+  #vHow .jlist .face{width:40px;height:40px;margin:0;grid-row:1/3}
+  #vHow .panel ol{font-size:clamp(11px,3.1vh,14px)}
+  #bHowBack{min-height:44px}
+  #result .cm{padding:5px 8px}
+  #result .cm .face{width:34px;height:34px}
+  #result .cm p{font-size:11px;line-height:1.4}
+  #result .wrap{gap:6px 12px}
+  #result{padding-top:max(46px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  #result .btn{min-height:40px}
+  #result .btn.pink{min-height:42px}
+}
+@media (max-height:700px) and (max-aspect-ratio:1/1){
+  #vTitle .logo .main{font-size:min(10vw,5.6vh)}
+  #vTitle .logo .sub{margin-top:6px;font-size:13px}
+  #vTitle .bubble{font-size:12.5px;padding:8px 12px;line-height:1.5}
+  #vTitle .mcLine .mcFace{width:40px;height:40px}
+  .view{padding-top:max(56px,calc(env(safe-area-inset-top) + 50px))}
+  .panel{padding:14px}
+  .jlist{margin-top:8px}
+  .jlist .face{width:40px;height:40px}
+  .btn.pink{min-height:54px;font-size:19px}
+  .btn{min-height:48px}
+  .btn.ghost{min-height:44px}
+}
 #tut{background:rgba(10,4,16,.35);align-items:flex-end;padding-bottom:max(16px,env(safe-area-inset-bottom))}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--paper);color:var(--ink);font-weight:900;padding:10px 18px;border-radius:99px;z-index:70;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 #boot-err{position:fixed;inset:auto 8px 8px 8px;z-index:99;background:#fff;color:#b00;font:12px/1.4 monospace;white-space:pre-wrap;padding:10px;border-radius:8px}
@@ -338,6 +387,16 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 <div class="modal" id="blankDlg" hidden><div class="box"><h3 data-t="confirmBlankT"></h3><p data-t="confirmBlank"></p><button class="btn pink" id="bKeep" type="button" data-t="keep"></button><button class="btn ghost" id="bGoAnyway" type="button" data-t="goAnyway"></button></div></div>
 
 <script>
+// ブラウザの拡大を止める（ピンチ・ダブルタップ・トラックパッドのピンチ・Ctrl+ホイール/キー）。iOS は user-scalable=no を無視するので JS でも止める
+(function(){
+  var opt={passive:false};
+  ['gesturestart','gesturechange','gestureend'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},opt)});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},opt);
+  var last=0;document.addEventListener('touchend',function(e){var n=Date.now();if(n-last<300&&!(e.target.closest&&e.target.closest('button,a')))e.preventDefault();last=n},opt);
+  document.addEventListener('dblclick',function(e){e.preventDefault()},opt);
+  window.addEventListener('wheel',function(e){if(e.ctrlKey)e.preventDefault()},opt);
+  window.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&['+','-','=','0',';'].indexOf(e.key)>=0)e.preventDefault()});
+})();
 // 起動失敗の保険。本体より先に動く素のscript。5秒たって起動フラグが無ければ原因を画面に出す
 (function(){
   var errs=[];
@@ -351,7 +410,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   },5000);
 })();
 </script>
-<script src="data.js?v=3"></script>
-<script src="game.js?v=3"></script>
+<script src="data.js?v=6"></script>
+<script src="game.js?v=6"></script>
 </body>
 </html>

@@ -711,7 +711,7 @@ function renderShow() {
   x.fillStyle = bg; x.fillRect(-30, -30, W + 60, H + 60)
   // 大画面
   const sw = Math.min(W * 0.62, 520), shh = Math.min(H * 0.13, 110), sx = g.vx - sw / 2, sy = Math.max(Math.min(g.vy - shh - 6, g.frontY - g.mh - shh - 14), 8)
-  if (!g.short) {
+  if (!g.short && !SH.finished) {
   x.fillStyle = '#05020a'; roundRect(x, sx - 6, sy - 6, sw + 12, shh + 12, 14); x.fill()
   const sg = x.createLinearGradient(sx, 0, sx + sw, 0); sg.addColorStop(0, '#5b3df5'); sg.addColorStop(0.5, '#ff4f9a'); sg.addColorStop(1, '#f5c84c')
   x.fillStyle = sg; x.globalAlpha = 0.9; roundRect(x, sx, sy, sw, shh, 10); x.fill(); x.globalAlpha = 1
