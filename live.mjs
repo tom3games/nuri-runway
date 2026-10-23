@@ -11,7 +11,7 @@ for (const [name, bt, opts] of [['chromium', chromium, {}], ['webkit', webkit, {
   await p.waitForFunction(() => window.__nrReady, null, { timeout: 15000 })
   await p.click('#bStart'); await p.waitForFunction(() => !document.querySelector('#bThemeGo').disabled); await p.click('#bThemeGo')
   for (let i = 0; i < 4; i++) await p.click('#bTut')
-  await p.click('[data-tool="bucket"]')
+  await p.click('#bTool'); await p.click('[data-tool="bucket"]')
   const s = await p.evaluate(() => { const r = document.querySelector('#paint').getBoundingClientRect(); return [r.left + r.width * 122 / 300, r.top + r.height * 380 / 560] })
   await p.mouse.click(...s)
   await p.click('#bRunway'); await p.waitForTimeout(4000); await p.screenshot({ path: `shots/live-${name}.png` })
