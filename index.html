@@ -28,7 +28,8 @@ html{background:var(--night)}
 html,body{min-height:100%;color:var(--paper);
   font-family:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif;-webkit-tap-highlight-color:transparent;
   word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere}
-body{min-height:100svh;overflow-x:hidden;background:transparent}
+body{min-height:100svh;overflow-x:hidden;background:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button,canvas{touch-action:manipulation}
 button{font-family:inherit;color:inherit;font-size:inherit}
 :focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 
@@ -114,7 +115,11 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .pHead .kw{width:100%;font-size:12px;color:#d9c3e0;font-weight:700}
 .pCanvasBox{grid-area:canvas;min-height:0;min-width:0;display:flex;align-items:center;justify-content:center;position:relative}
 #paint{touch-action:none;display:block;border-radius:18px;background:radial-gradient(circle at 50% 30%,#fffaf4,#f1e3d6);box-shadow:0 8px 24px rgba(0,0,0,.35),inset 0 0 0 3px rgba(255,255,255,.6);cursor:crosshair}
-.parts{grid-area:parts;display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.parts{grid-area:parts;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.parts .pt{position:relative;white-space:nowrap;letter-spacing:-.03em;font-size:10px}
+.parts .pt .side{position:absolute;top:-7px;right:-4px;font-size:10px;background:var(--pink);color:#fff;border-radius:99px;padding:1px 6px;line-height:1.4}
+.parts .pt.all{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.parts .pt.all svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .parts .pt{background:rgba(255,246,238,.1);border-radius:10px;padding:5px 2px 6px;text-align:center;font-size:11px;font-weight:900;border:2px solid transparent;cursor:pointer;color:var(--paper);min-height:40px}
 .parts .pt.on{border-color:var(--gold);background:rgba(245,200,76,.18)}
 .parts .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);margin:4px 4px 0;overflow:hidden}
@@ -161,7 +166,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   #bRunway{min-height:44px;font-size:17px}
 }
 @media (min-aspect-ratio:1/1) and (min-width:700px) and (min-height:521px){
-  .parts{grid-template-columns:repeat(3,1fr)}
+  .parts{grid-template-columns:repeat(4,1fr)}
   .parts .pt{font-size:13px;padding:8px 2px}
   .tools{flex-wrap:wrap}
 }
@@ -346,7 +351,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   },5000);
 })();
 </script>
-<script src="data.js?v=2"></script>
-<script src="game.js?v=2"></script>
+<script src="data.js?v=3"></script>
+<script src="game.js?v=3"></script>
 </body>
 </html>

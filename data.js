@@ -105,7 +105,7 @@ const STR = {
     themeIs: '今日のお題', themeGo: 'ぬりはじめる', reroll: 'お題を変える',
     parts: { hair: 'かみ', face: 'かお', top: 'トップス', arms: 'うで', bottom: 'ボトムス', shoes: 'くつ' },
     tools: { pen: 'ペン', bucket: 'バケツ', stamp: 'スタンプ', eraser: 'けしゴム' },
-    mirror: '左右対称', undo: 'もどす', runway: 'ランウェイへ',
+    side: { l: '左', r: '右' }, whole: '全体', mirror: '左右対称', undo: 'もどす', runway: 'ランウェイへ',
     confirmBlankT: 'まだ何もぬっていません', confirmBlank: 'このまま出ると、たぶん何か投げられます。',
     goAnyway: 'それでも出る', keep: 'ぬりにもどる',
     mc0: 'エントリーナンバー1番、マネキンくん！', mc1: 'お題は「{t}」！',
@@ -113,7 +113,7 @@ const STR = {
     again: 'もう一回ぬる', next: '次のお題へ', save: '画像を保存', toTitle: 'タイトル',
     skip: 'スキップ',
     tut: [
-      ['ぬりたい所を{tap}', 'かみ・かお・トップスなど、パーツごとに線の外へはみ出さずにぬれます。'],
+      ['パーツを選ぶと大きくなる', '下の「かみ」「トップス」などを押すと、そこが拡大されます。線の外へははみ出しません。うでとくつは押すたびに左→右→全体。'],
       ['色と道具をえらぶ', 'バケツならパーツが一発でぬれます。スタンプで柄も入れられます。'],
       ['お題に合わせて全部ぬる', '下のゲージが100%になるまでぬると、ロボ審査員がよろこびます。'],
       ['できたらランウェイへ', '3人の審査員が採点します。観客の反応は…覚悟しておこう。'],
@@ -122,7 +122,7 @@ const STR = {
     tutNext: 'つぎへ', tutDone: 'はじめる',
     howT: '遊び方',
     howList: [
-      'お題が出たら、マネキンくんをぬって服を作ります。ぬれるのはパーツの中だけ。はみ出しません。',
+      'お題が出たら、マネキンくんをぬって服を作ります。下のパーツのボタンを押すと拡大されて、そのパーツの中だけにぬれます。「全体」で元に戻ります。',
       'ペンは太さ3段階。バケツはパーツをまるごと1色に。スタンプはハート・星・水玉。',
       '左右対称をオンにすると、反対側にも同じ線が引かれます。',
       '審査員は3人。マダムはお題に合う色か、ギャルは色の数と盛り、ロボはぬり残しを見ます。',
@@ -144,7 +144,7 @@ const STR = {
     themeIs: "Today's theme", themeGo: 'Start painting', reroll: 'Another theme',
     parts: { hair: 'Hair', face: 'Face', top: 'Top', arms: 'Arms', bottom: 'Bottoms', shoes: 'Shoes' },
     tools: { pen: 'Pen', bucket: 'Bucket', stamp: 'Stamp', eraser: 'Eraser' },
-    mirror: 'Mirror', undo: 'Undo', runway: 'To the runway',
+    side: { l: 'L', r: 'R' }, whole: 'All', mirror: 'Mirror', undo: 'Undo', runway: 'To the runway',
     confirmBlankT: 'Nothing is painted yet', confirmBlank: 'If you go like this, things will probably be thrown at you.',
     goAnyway: 'Go anyway', keep: 'Keep painting',
     mc0: 'Entry number one: Mannequin-kun!', mc1: 'The theme is "{t}"!',
@@ -152,7 +152,7 @@ const STR = {
     again: 'Paint again', next: 'Next theme', save: 'Save image', toTitle: 'Title',
     skip: 'Skip',
     tut: [
-      ['{tap} the part to paint', 'Hair, face, top and more. Paint stays inside each part.'],
+      ['Pick a part to zoom in', 'Tap Hair, Top and so on below to zoom in. Paint stays inside the part. Arms and shoes go left, right, then back.'],
       ['Pick a color and a tool', 'The bucket fills a whole part at once. Stamps add patterns.'],
       ['Paint everything to fit the theme', 'Fill the gauges to 100% and the robot judge will be happy.'],
       ['Then hit the runway', 'Three judges score you. The crowd... brace yourself.'],
@@ -161,7 +161,7 @@ const STR = {
     tutNext: 'Next', tutDone: "Let's go",
     howT: 'How to play',
     howList: [
-      'Get a theme, then paint the mannequin to make an outfit. Paint stays inside each part.',
+      'Get a theme, then paint the mannequin. Tap a part button to zoom in and paint only inside it. Tap All to zoom out.',
       'Pen has 3 sizes. Bucket fills a part with one color. Stamps: heart, star, dots.',
       'Turn on Mirror to draw the same line on the other side.',
       'Three judges: Madame checks the theme colors, Luna wants bold color, the robot hates gaps.',

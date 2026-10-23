@@ -72,7 +72,7 @@ await t('ぬり画面: キャンバスと道具が画面内に全部収まる（
 await t('ぬり画面ではみ出しがない', async () => { const o = await overflow(p); expect(o.sw <= o.W && !o.bad.length, JSON.stringify(o)) })
 
 // 設計座標 → 画面座標
-const toScreen = (x, y) => p.evaluate(([x, y]) => { const r = document.querySelector('#paint').getBoundingClientRect(); return [r.left + x / 300 * r.width, r.top + y / 560 * r.height] }, [x, y])
+const toScreen = (x, y) => p.evaluate(([x, y]) => { const r = document.querySelector('#paint').getBoundingClientRect(), v = nr.S.vw; return [r.left + (x - v.x) / v.w * r.width, r.top + (y - v.y) / v.h * r.height] }, [x, y])
 const covs = () => p.evaluate(() => Object.fromEntries(nr.PARTS.map(q => [q.id, +nr.coverage(nr.S.outfit, q.id).toFixed(3)])))
 async function drag(pts) { const s = await toScreen(...pts[0]); await p.mouse.move(...s); await p.mouse.down(); for (const q of pts.slice(1)) { const s2 = await toScreen(...q); await p.mouse.move(...s2, { steps: 6 }) } await p.mouse.up() }
 
@@ -105,6 +105,44 @@ await t('けしゴムで消える', async () => {
   await drag([[100, 150], [200, 150], [200, 260], [100, 260]]); const after = (await covs()).top; expect(after < before, before + ' -> ' + after); return { before, after }
 })
 await p.screenshot({ path: ROOT + '/shots/04-paint.png' })
+await t('パーツのボタンで拡大される（くつ）。他は薄く、全体で戻る', async () => {
+  await p.click('.pt[data-part="shoes"]'); await p.waitForTimeout(700)
+  const v = await p.evaluate(() => ({ ...nr.S.vw, zoom: nr.S.zoom, on: document.querySelector('.pt.on').dataset.part }))
+  expect(v.zoom === 'shoes' && v.w < 120 && v.y > 250 && v.on === 'shoes', JSON.stringify(v))
+  await p.screenshot({ path: ROOT + '/shots/05-zoom-shoes.png' })
+  return { zoom: +(300 / v.w).toFixed(2) + 'x' }
+})
+await t('拡大中: なぞるとそのパーツだけにぬれる（外から描き始めてもはみ出さない）', async () => {
+  await p.click('[data-tool="pen"]'); await p.click('[data-size="1"]'); await p.click('.sw[data-color="1"]')
+  const before = await covs()
+  await drag([[85, 470], [110, 505], [140, 505], [150, 470]])
+  const c = await covs(); expect(c.shoes > before.shoes + 0.02 && c.bottom === before.bottom, JSON.stringify({ before, c })); return { shoes: c.shoes }
+})
+await t('拡大中の座標: 画面のくつの位置をなぞると、くつの同じ場所にぬれる', async () => {
+  const r = await p.evaluate(() => { const c = nr.S.outfit.shoes, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let minY = 1e9, maxY = 0
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 127) { minY = Math.min(minY, y); maxY = Math.max(maxY, y) }
+    return { minY: Math.round(minY / nr.PS + 486), maxY: Math.round(maxY / nr.PS + 486) } })
+  expect(r.minY <= r.maxY && r.minY >= 486 && r.maxY <= 530, JSON.stringify(r)); return r
+})
+await t('うでは押すたびに 左→右→全体。片側は2倍以上に寄る', async () => {
+  const seq = []
+  for (let i = 0; i < 3; i++) { await p.click('.pt[data-part="arms"]'); await p.waitForTimeout(700); seq.push(await p.evaluate(() => ({ z: nr.S.zoom, s: nr.S.side, k: +(300 / nr.S.vw.w).toFixed(2), cx: Math.round(nr.S.vw.x + nr.S.vw.w / 2) }))) }
+  expect(seq[0].s === 'l' && seq[0].k >= 2 && seq[0].cx < 150 && seq[1].s === 'r' && seq[1].cx > 150 && seq[2].z === null, JSON.stringify(seq))
+  await p.click('.pt[data-part="arms"]'); await p.waitForTimeout(700); await p.screenshot({ path: ROOT + '/shots/06-zoom-arm.png' })
+  return seq.map(q => (q.s || 'all') + ':' + q.k + 'x')
+})
+await t('全体ボタンで元に戻る', async () => {
+  await p.click('.pt.all'); await p.waitForTimeout(700); const v = await p.evaluate(() => ({ ...nr.S.vw, zoom: nr.S.zoom }))
+  expect(v.zoom === null && Math.abs(v.w - 300) < 0.5 && Math.abs(v.y) < 0.5, JSON.stringify(v))
+})
+await t('文字選択（青い範囲）が出ない設定になっている', async () => {
+  const r = await p.evaluate(() => { const st = getComputedStyle(document.body); return st.userSelect || st.webkitUserSelect })
+  expect(r === 'none', r); return r
+})
+await t('なぞっても文字が選択されない（ぬり画面でドラッグした後に選択範囲が空）', async () => {
+  await p.mouse.move(10, 300); await p.mouse.down(); await p.mouse.move(380, 820, { steps: 8 }); await p.mouse.up()
+  const sel = await p.evaluate(() => String(getSelection())); expect(sel === '', JSON.stringify(sel))
+})
 
 // ---------- 採点
 await t('何もぬらないと0点・大炎上・特別コメント', async () => {
@@ -116,7 +154,7 @@ const scoreOutfit = (plan, themeId, strokes = 0) => p.evaluate(([plan, themeId, 
   const o = {}
   for (const q of nr.PARTS) { const c = document.createElement('canvas'); c.width = nr.S.outfit[q.id].width; c.height = nr.S.outfit[q.id].height; o[q.id] = c
     const col = plan[q.id]; if (col === undefined) continue
-    const x = c.getContext('2d'); x.setTransform(2, 0, 0, 2, -q.box.x * 2, -q.box.y * 2); x.save(); x.clip(q.path)
+    const x = c.getContext('2d'); x.setTransform(nr.PS, 0, 0, nr.PS, -q.box.x * nr.PS, -q.box.y * nr.PS); x.save(); x.clip(q.path)
     if (Array.isArray(col)) { x.fillStyle = PALETTE[col[0]].c; x.fillRect(q.box.x, q.box.y, q.box.w, q.box.h / 2) } else { x.fillStyle = PALETTE[col].c; x.fillRect(q.box.x, q.box.y, q.box.w, q.box.h) }
     x.restore() }
   const keep = [nr.S.strokes, nr.S.stamps, nr.S.buckets]; nr.S.strokes = strokes; nr.S.stamps = 0; nr.S.buckets = 6
@@ -145,7 +183,7 @@ await t('点の分布: 5段階すべてに届く', async () => {
 // ---------- ショー（実時間を止めて台本どおりに進める）
 async function runShow(page, plan, themeId, name) {
   await page.evaluate(([plan, themeId]) => {
-    nr.setTheme(themeId); nr.S.outfit = Object.fromEntries(nr.PARTS.map(q => { const c = document.createElement('canvas'); c.width = q.box.w * 2; c.height = q.box.h * 2; return [q.id, c] }))
+    nr.setTheme(themeId); nr.S.outfit = Object.fromEntries(nr.PARTS.map(q => { const c = document.createElement('canvas'); c.width = q.box.w * nr.PS; c.height = q.box.h * nr.PS; return [q.id, c] }))
     for (const [id, col] of Object.entries(plan)) nr.bucket(id, col)
     nr.S.strokes = 60; nr.dbg.pause(true); nr.startShow()
   }, [plan, themeId])
@@ -202,7 +240,7 @@ await t('通しでエラーが出ていない', async () => { expect(p.errs.leng
 
 // ---------- 英語
 await t('英語に切り替えると文言・お題・審査員が英語になる', async () => {
-  await p.click('#bLang'); const r = await p.evaluate(() => ({ run: document.querySelector('#bRunway').textContent, th: document.querySelector('#pTheme').textContent, pt: document.querySelector('.pt').textContent }))
+  await p.click('#bLang'); const r = await p.evaluate(() => ({ run: document.querySelector('#bRunway').textContent, th: document.querySelector('#pTheme').textContent, pt: document.querySelector('.pt[data-part="hair"]').textContent }))
   expect(r.run.includes('runway') && /[A-Za-z]/.test(r.th) && r.pt.startsWith('Hair'), JSON.stringify(r)); await p.click('#bLang'); return r
 })
 await p.close()

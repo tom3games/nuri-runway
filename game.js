@@ -35,7 +35,7 @@ const PARTS = [
 ]
 const PART_ORDER_UI = ['hair', 'face', 'top', 'arms', 'bottom', 'shoes']
 const PART_W = { hair: 0.13, face: 0.12, top: 0.24, arms: 0.13, bottom: 0.24, shoes: 0.14 }
-const PS = 2 // ぬり用キャンバスの解像度（設計1pxあたり）
+const PS = 3 // ぬり用キャンバスの解像度（設計1pxあたり）。拡大しても粗く見えないよう3倍
 const BASE = '#e7ddd2', LINE = '#3a2a3e'
 for (const p of PARTS) { p.path = new Path2D(); for (const d of p.d) p.path.addPath(new Path2D(d)); p.linePath = new Path2D(); for (const d of p.line || p.d) p.linePath.addPath(new Path2D(d)) }
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]))
@@ -138,7 +138,7 @@ function stampAt(x, ctx, px, py, kind) {
 }
 function pushUndo(ids) {
   S.undo.push(ids.map(id => ({ id, img: S.outfit[id].getContext('2d').getImageData(0, 0, S.outfit[id].width, S.outfit[id].height) })))
-  if (S.undo.length > 25) S.undo.shift()
+  if (S.undo.length > 20) S.undo.shift()
   $('#bUndo').disabled = false
 }
 function doUndo() {
@@ -153,9 +153,10 @@ function bucket(id, color) {
 // ストロークの開始。mirror なら反対側も
 let cur = null
 function strokeBegin(x, y) {
-  const id = partAt(x, y); if (!id) return false
+  // 拡大中は選んだパーツだけにぬる（パーツの外から描き始めても、はみ出さずにそのパーツへ）
+  const id = S.zoom || partAt(x, y); if (!id) return false
   const targets = [{ id, mx: false }]
-  if (S.mirror && S.tool !== 'bucket') { const mid = partAt(MW - x, y); if (mid && Math.abs(MW - x - x) > 2) targets.push({ id: mid, mx: true }) }
+  if (S.mirror && S.tool !== 'bucket') { const mid = S.zoom || partAt(MW - x, y); if (mid && Math.abs(MW - x - x) > 2) targets.push({ id: mid, mx: true }) }
   pushUndo([...new Set(targets.map(t => t.id))])
   if (S.tool === 'bucket') { bucket(id, S.color); S.buckets++; Snd.sfx('bucket'); setActivePart(id); cur = null; updateParts(); paintDirty = true; return true }
   cur = { targets, lx: x, ly: y, acc: 0 }
@@ -434,7 +435,9 @@ const STAMP_ICONS = {
   dot: '<circle cx="12" cy="12" r="2.5"/><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><circle cx="18" cy="17" r="2"/>',
 }
 function buildPaintUI() {
-  $('#parts').innerHTML = PART_ORDER_UI.map(id => `<button class="pt" type="button" data-part="${id}">${T('parts')[id]}<div class="bar"><i></i></div></button>`).join('')
+  $('#parts').innerHTML = `<button class="pt all" type="button" data-part=""><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>${T('whole')}</button>` +
+    PART_ORDER_UI.map(id => `<button class="pt" type="button" data-part="${id}">${T('parts')[id]}<div class="bar"><i></i></div></button>`).join('')
+  setActivePart(activePart)
   $('#toolRow').innerHTML = Object.keys(TOOL_ICONS).map(k => `<button class="tool${S.tool === k ? ' on' : ''}" type="button" data-tool="${k}" aria-label="${T('tools')[k]}"><svg viewBox="0 0 24 24">${TOOL_ICONS[k]}</svg><span>${T('tools')[k]}</span></button>`).join('')
   $('#pal').innerHTML = PALETTE.map((p, i) => `<button class="sw${S.color === i ? ' on' : ''}" type="button" data-color="${i}" style="background:${p.c}" aria-label="${S.lang === 'ja' ? p.ja : p.en}"></button>`).join('')
   buildSub(); updateParts()
@@ -446,10 +449,35 @@ function buildSub() {
   else row.innerHTML = SIZES.map((s, i) => `<button class="tool${S.size === i ? ' on' : ''}" type="button" data-size="${i}" aria-label="${T('sizes')[i]}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="${[2.2, 4.5, 8][i]}" fill="currentColor" stroke="none"/></svg><span>${T('sizes')[i]}</span></button>`).join('')
 }
 let activePart = null
-function setActivePart(id) { activePart = id; for (const b of $$('.pt')) b.classList.toggle('on', b.dataset.part === id) }
+function setActivePart(id) { activePart = id; for (const b of $$('.pt')) b.classList.toggle('on', b.dataset.part === (S.zoom || '') && (!!S.zoom || !b.dataset.part)) }
+// 表示範囲（設計座標）。パーツを選ぶとそのパーツへ寄る
+const FULL = { x: 0, y: 0, w: MW, h: MH }
+S.vw = { ...FULL }; S.vwT = { ...FULL }; S.zoom = null
+// 腕と靴は左右で1パーツ。拡大は片側ずつ（左→右→全体）
+const SIDES = { arms: { l: { x: 46, y: 142, w: 52, h: 194 }, r: { x: 202, y: 142, w: 52, h: 194 } }, shoes: { l: { x: 82, y: 486, w: 66, h: 44 }, r: { x: 152, y: 486, w: 66, h: 44 } } }
+function zoomRect(id, side) {
+  if (!id) return { ...FULL }
+  const b = (SIDES[id] && side) ? SIDES[id][side] : PART[id].box, pad = 14, cx = b.x + b.w / 2, cy = b.y + b.h / 2
+  let w = Math.max(b.w + pad * 2, (b.h + pad * 2) * MW / MH, MW / 3.2); w = Math.min(w, MW)
+  const h = w * MH / MW
+  return { x: clamp(cx - w / 2, 0, MW - w), y: clamp(cy - h / 2, -20, MH - h + 20), w, h }
+}
+function setZoom(id, side) {
+  S.zoom = id || null; S.side = S.zoom && SIDES[S.zoom] ? (side || 'l') : null
+  S.vwT = zoomRect(S.zoom, S.side); activePart = S.zoom
+  setActivePart(S.zoom); paintDirty = true
+  for (const b of $$('.pt .side')) b.remove()
+  if (S.side) { const b = $(`.pt[data-part="${S.zoom}"]`); if (b) b.insertAdjacentHTML('afterbegin', `<b class="side">${T('side')[S.side]}</b>`) }
+}
+function cycleZoom(id) {
+  if (!id) return setZoom(null)
+  if (id !== S.zoom) return setZoom(id, 'l')
+  if (S.side === 'l') return setZoom(id, 'r')
+  setZoom(null)
+}
 function updateParts() {
   if (!S.outfit) return
-  for (const b of $$('.pt')) { const c = coverage(S.outfit, b.dataset.part); b.querySelector('i').style.width = Math.round(c * 100) + '%'; b.classList.toggle('full', c > 0.97); b.dataset.cov = c.toFixed(3) }
+  for (const b of $$('.pt')) { if (!b.dataset.part) continue; const c = coverage(S.outfit, b.dataset.part); b.querySelector('i').style.width = Math.round(c * 100) + '%'; b.classList.toggle('full', c > 0.97); b.dataset.cov = c.toFixed(3) }
 }
 let paintDirty = true, pScale = 1
 function layoutPaint() {
@@ -466,21 +494,28 @@ function renderPaint(t) {
   if (!paintDirty || $('#vPaint').hidden) return; paintDirty = false
   const cv = $('#paint'), x = cv.getContext('2d')
   x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height)
-  x.setTransform(pScale, 0, 0, pScale, 0, 0)
+  // 表示範囲を目標へなめらかに寄せる
+  const v = S.vw, g = S.vwT, k = 0.22
+  for (const key of ['x', 'y', 'w', 'h']) { v[key] += (g[key] - v[key]) * k; if (Math.abs(g[key] - v[key]) < 0.05) v[key] = g[key] }
+  if (v.x !== g.x || v.y !== g.y || v.w !== g.w) paintDirty = true
+  const zs = pScale * MW / v.w
+  x.setTransform(zs, 0, 0, zs, -v.x * zs, -v.y * zs)
   // 床の影
   x.fillStyle = 'rgba(60,30,70,.12)'; x.beginPath(); x.ellipse(150, 532, 80, 10, 0, 0, 7); x.fill()
   drawModel(x, S.outfit, { expr: 'neutral', t })
+  // 拡大中は他のパーツを薄くして、ぬれる場所を分かりやすく
+  if (S.zoom) { x.save(); const m = new Path2D(); m.rect(-50, -50, MW + 100, MH + 100); m.addPath(PART[S.zoom].path); x.fillStyle = 'rgba(250,244,236,.62)'; x.fill(m, 'evenodd'); x.restore() }
   if (activePart) { x.save(); x.setLineDash([6, 5]); x.lineDashOffset = -t * 20; x.strokeStyle = '#ff4f9a'; x.lineWidth = 2; x.stroke(PART[activePart].path); x.restore(); paintDirty = true }
   if (S.mirror) { x.save(); x.setLineDash([4, 6]); x.strokeStyle = 'rgba(91,61,245,.5)'; x.lineWidth = 1.4; x.beginPath(); x.moveTo(150, 20); x.lineTo(150, 540); x.stroke(); x.restore() }
 }
-function toDesign(e) { const r = $('#paint').getBoundingClientRect(); return [(e.clientX - r.left) / r.width * MW, (e.clientY - r.top) / r.height * MH] }
+function toDesign(e) { const r = $('#paint').getBoundingClientRect(), v = S.vw; return [v.x + (e.clientX - r.left) / r.width * v.w, v.y + (e.clientY - r.top) / r.height * v.h] }
 function bindPaint() {
   const cv = $('#paint'); let pid = null
   cv.addEventListener('pointerdown', e => { Snd.init(); if (pid !== null) return; const [x, y] = toDesign(e); if (strokeBegin(x, y)) { pid = e.pointerId; try { cv.setPointerCapture(pid) } catch (er) {} } e.preventDefault() })
   cv.addEventListener('pointermove', e => { if (e.pointerId !== pid) return; const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; for (const ev of (evs.length ? evs : [e])) { const [x, y] = toDesign(ev); strokeMove(x, y) } })
   const end = e => { if (e.pointerId !== pid) return; pid = null; strokeEnd() }
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end)
-  $('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (b) { setActivePart(b.dataset.part); Snd.sfx('tap') } })
+  $('#parts').addEventListener('click', e => { const b = e.target.closest('.pt'); if (!b) return; cycleZoom(b.dataset.part); Snd.sfx(S.zoom ? 'spin' : 'tap') })
   $('#toolRow').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (!b) return; S.tool = b.dataset.tool; for (const x of $$('[data-tool]')) x.classList.toggle('on', x === b); buildSub(); Snd.sfx('tap') })
   $('#subRow').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.disabled) return
@@ -494,7 +529,7 @@ function bindPaint() {
 }
 function startPaint(fresh) {
   if (fresh || !S.outfit) { S.outfit = newOutfit(); S.undo = []; S.strokes = S.stamps = S.buckets = 0; $('#bUndo').disabled = true }
-  setActivePart(null); go('vPaint'); updateParts()
+  setZoom(null); S.vw = { ...FULL }; go('vPaint'); updateParts()
   let seen = null; try { seen = localStorage.getItem('nr.tut') } catch (e) {}
   if (!seen) openTut()
 }
@@ -892,6 +927,7 @@ window.nr = {
   bucket: (id, c) => { pushUndo([id]); bucket(id, c); S.buckets++; updateParts(); paintDirty = true },
   stroke: (pts, opt = {}) => { Object.assign(S, opt); if (!strokeBegin(...pts[0])) return false; for (const p of pts.slice(1)) strokeMove(...p); strokeEnd(); return true },
   setTheme: id => { S.theme = THEMES.find(t => t.id === id); showTheme(false) },
+  setZoom, PS,
   dbg: { pause: v => { SH.paused = v }, step: n => { for (let i = 0; i < n; i++) updateShow(STEP) }, render: () => renderShow() },
 }
 boot()
