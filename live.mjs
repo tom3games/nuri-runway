@@ -1,5 +1,8 @@
 // 公開URLの確認。node live.mjs（ログインしていないブラウザで見る）
 import { chromium, webkit } from 'playwright'
+import { execSync } from 'node:child_process'
+// 個人のアカウント名は公開リポジトリに書かない。実行時に gh から取る
+const OWNER = (() => { try { return execSync('gh api user -q .login', { encoding: 'utf8' }).trim().toLowerCase() } catch { return '' } })()
 const URL0 = 'https://tom3games.github.io/nuri-runway/'
 const out = []
 for (const [name, bt, opts] of [['chromium', chromium, {}], ['webkit', webkit, { isMobile: true, hasTouch: true, deviceScaleFactor: 2 }]]) {
@@ -26,7 +29,7 @@ if (process.env.SKIPGH) { console.log(out.join('\n')); process.exit(0) }
 const b = await chromium.launch(), p = await b.newPage()
 for (const u of ['https://github.com/tom3games/nuri-runway', 'https://github.com/tom3games/nuri-runway/commits/main']) {
   const res = await p.goto(u, { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(2500)
-  out.push(`${u} status=${res.status()} tmk4men=${/tmk4men/i.test(await p.content()) ? 'FOUND' : 'none'}`)
+  out.push(`${u} status=${res.status()} owner=${OWNER && (await p.content()).toLowerCase().includes(OWNER) ? 'FOUND' : 'none'}`)
 }
 await b.close()
 console.log(out.join('\n'))
