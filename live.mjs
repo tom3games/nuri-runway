@@ -1,12 +1,13 @@
 // 公開URLの確認。node live.mjs（ログインしていないブラウザで見る）
 import { chromium, webkit } from 'playwright'
+import { MUTE_LAUNCH, muteContext } from './mute.mjs'
 import { execSync } from 'node:child_process'
 // 個人のアカウント名は公開リポジトリに書かない。実行時に gh から取る
 const OWNER = (() => { try { return execSync('gh api user -q .login', { encoding: 'utf8' }).trim().toLowerCase() } catch { return '' } })()
 const URL0 = 'https://tom3games.github.io/nuri-runway/'
 const out = []
 for (const [name, bt, opts] of [['chromium', chromium, {}], ['webkit', webkit, { isMobile: true, hasTouch: true, deviceScaleFactor: 2 }]]) {
-  const b = await bt.launch(), ctx = await b.newContext({ locale: 'ja-JP', viewport: { width: 390, height: 844 }, ...opts }), p = await ctx.newPage()
+  const b = await bt.launch(bt === chromium ? MUTE_LAUNCH : {}), ctx = await b.newContext({ locale: 'ja-JP', viewport: { width: 390, height: 844 }, ...opts }); await muteContext(ctx); const p = await ctx.newPage()
   const errs = []
   p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text()) })
   p.on('requestfailed', r => errs.push('fail ' + r.url()))
@@ -26,7 +27,7 @@ for (const [name, bt, opts] of [['chromium', chromium, {}], ['webkit', webkit, {
 }
 if (process.env.SKIPGH) { console.log(out.join('\n')); process.exit(0) }
 // ログアウト状態でリポジトリ・更新履歴に個人のIDが出ていないか
-const b = await chromium.launch(), p = await b.newPage()
+const b = await chromium.launch(MUTE_LAUNCH), p = await b.newPage()
 for (const u of ['https://github.com/tom3games/nuri-runway', 'https://github.com/tom3games/nuri-runway/commits/main']) {
   const res = await p.goto(u, { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(2500)
   out.push(`${u} status=${res.status()} owner=${OWNER && (await p.content()).toLowerCase().includes(OWNER) ? 'FOUND' : 'none'}`)

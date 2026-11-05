@@ -1,0 +1,25 @@
+- snd/tap.mp3: Interface Sounds / Kenney / CC0
+- snd/undo.mp3: Interface Sounds / Kenney / CC0
+- snd/brush1.mp3: Interface Sounds / Kenney / CC0
+- snd/brush2.mp3: Interface Sounds / Kenney / CC0
+- snd/bucket.mp3: 40 CC0 water / splash / slime SFX / rubberduck / CC0
+- snd/stamp1.mp3: 3 Pop Sounds / wubitog / CC0
+- snd/stamp2.mp3: 3 Pop Sounds / wubitog / CC0
+- snd/stamp3.mp3: 3 Pop Sounds / wubitog / CC0
+- snd/ding.mp3: Bell dings/chimes / PWL / CC0
+- snd/hit1.mp3: Thwack Sounds / AntumDeluge / CC0
+- snd/boom.mp3: 75 CC0 breaking / falling / hit sfx / rubberduck / CC0
+- snd/splat1.mp3: 40 CC0 water / splash / slime SFX / rubberduck / CC0
+- snd/splat2.mp3: 40 CC0 water / splash / slime SFX / rubberduck / CC0
+- snd/splat3.mp3: 40 CC0 water / splash / slime SFX / rubberduck / CC0
+- snd/whoosh1.mp3: Swishes Sound Pack / artisticdude / CC0
+- snd/whoosh2.mp3: Swishes Sound Pack / artisticdude / CC0
+- snd/flash.mp3: 50 RPG sound effects / Kenney / CC0
+- snd/faint.mp3: Wacky Wobblings / Fupi / CC0
+- snd/giggle.mp3: Group giggling / Nocturnal_Vanguard / CC0
+- snd/crowd.mp3, snd/murmur.mp3（切り出し）: Crowd Shouting/Speaking Ambience / StarNinjas / CC0
+- snd/applause.mp3（切り出し）: Applause in a large hall or church / eXpl0it3r / CC0
+- snd/bgm_title.mp3: Comedy Funny Background Song / Almitory / CC0 を選択
+- snd/bgm_paint.mp3: Furniture Shop / SkyleTheFrench / CC0
+- snd/bgm_runway.mp3（64秒切り出し）: Funky Hip Hop Lofi Jam / omfgdude / CC0
+- snd/bgm_sad.mp3: quirky vendor / Bobjt / CC0 を選択

@@ -1,5 +1,6 @@
 // 全項目の自動検証。node verify.mjs（shots/ にスクショを出す）
 import { chromium, webkit } from 'playwright'
+import { MUTE_LAUNCH, muteContext } from './mute.mjs'
 import { spawn } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 const ROOT = import.meta.dirname
@@ -24,6 +25,7 @@ async function pick(pg, sel) {
 
 async function open(browser, opts = {}, keepTut = false) {
   const ctx = await browser.newContext({ locale: 'ja-JP', viewport: { width: 390, height: 844 }, ...opts })
+  await muteContext(ctx)
   await ctx.addInitScript(k => { try { localStorage.clear(); if (k) localStorage.setItem('nr.tut', '1') } catch (e) {} }, !keepTut)
   const p = await ctx.newPage(); p.errs = []
   p.on('pageerror', e => p.errs.push('pageerror ' + e.message))
@@ -47,7 +49,7 @@ const variance = (p, sel) => p.evaluate(sel => {
   return Math.round(s2 / n - (s / n) ** 2)
 }, sel)
 
-const browser = await chromium.launch()
+const browser = await chromium.launch(MUTE_LAUNCH)
 let p = await open(browser, {}, true)
 
 await t('起動時にエラーが出ない', async () => { expect(p.errs.length === 0, p.errs.join('|')) })
@@ -260,6 +262,7 @@ await t('音: 曲と効果音が鳴っている', async () => {
   const r = await p.evaluate(async () => { await new Promise(r => setTimeout(r, 900)); return { played: nr.Snd.played, level: nr.Snd.level() } })
   expect(r.played['bgm:paint'] && r.played['bgm:runway'] && r.played.splat && r.played.ding && r.played.boo && r.played.applause, JSON.stringify(r.played)); return Object.keys(r.played).length + ' kinds'
 })
+await t('テスト中は無音（Chromium）', async () => { const r = await p.evaluate(() => ({ ok: window.__muteOk(), calls: window.__soundCalls })); expect(r.ok && r.calls > 0, JSON.stringify(r)); return r })
 await t('まっ白のままランウェイへ → 確認が出る', async () => {
   await p.click('#bRunway'); expect(await p.isVisible('#blankDlg'), 'no dialog'); await p.click('#bKeep')
 })
@@ -305,8 +308,8 @@ const fit = q => q.evaluate(() => {
   for (const el of document.querySelectorAll('main:not([hidden]) button,main:not([hidden]) canvas')) { if (!el.offsetParent) continue; const r = el.getBoundingClientRect(); if (r.bottom > H + 1 || r.top < -1) over.push((el.id || el.className) + ':' + Math.round(r.top) + '-' + Math.round(r.bottom)) }
   return { H, over: over.slice(0, 6) }
 })
-const fb = await chromium.launch()
-for (const [w, h, name] of [[360, 640, 'small'], [390, 844, 'phone'], [844, 390, 'land'], [667, 375, 'land-se'], [768, 1024, 'tab'], [1440, 900, 'pc']]) {
+const fb = await chromium.launch(MUTE_LAUNCH)
+for (const [w, h, name] of [[360, 640, 'small'], [390, 844, 'phone'], [430, 932, 'big'], [844, 390, 'land'], [667, 375, 'land-se'], [768, 1024, 'tab'], [1440, 900, 'pc']]) {
   const q = await open(fb, { viewport: { width: w, height: h } })
   const chk = async (view) => { const r = await fit(q); await q.screenshot({ path: `${ROOT}/shots/40-fit-${name}-${view}.png` }); return r }
   const res = {}
@@ -329,6 +332,7 @@ await t('WebKit: 起動してタッチでぬれる', async () => {
   await pick(wp, '[data-tool="bucket"]'); await wp.touchscreen.tap(...s)
   const c = await wp.evaluate(() => nr.coverage(nr.S.outfit, 'bottom')); expect(c > 0.97, c); return c
 })
+await t('テスト中は無音（WebKit）', async () => { const r = await wp.evaluate(() => ({ ok: window.__muteOk(), calls: window.__soundCalls })); expect(r.ok, JSON.stringify(r)); return r })
 await t('WebKit: ショーから結果まで通る', async () => {
   await wp.evaluate(() => { nr.dbg.pause(true); nr.startShow(); nr.dbg.step(60 * 17); nr.dbg.render() }); await wp.waitForTimeout(500)
   expect(await wp.isVisible('#result'), 'no result'); await wp.screenshot({ path: ROOT + '/shots/30-webkit-result.png' }); return await wp.textContent('#rStamp')
