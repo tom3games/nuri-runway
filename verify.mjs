@@ -1,4 +1,5 @@
 // 全項目の自動検証。node verify.mjs（shots/ にスクショを出す）
+import './mute-auto.mjs'  // テスト中は絶対に音を出さない（playwright を無音に差し替え）
 import { chromium, webkit } from 'playwright'
 import { MUTE_LAUNCH, muteContext } from './mute.mjs'
 import { spawn } from 'node:child_process'

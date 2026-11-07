@@ -297,6 +297,8 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--paper);color:var(--ink);font-weight:900;padding:10px 18px;border-radius:99px;z-index:70;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 #boot-err{position:fixed;inset:auto 8px 8px 8px;z-index:99;background:#fff;color:#b00;font:12px/1.4 monospace;white-space:pre-wrap;padding:10px;border-radius:8px}
 @media (prefers-reduced-motion:reduce){#stage .beam,body.party #stage .crowd{animation:none}}
+/* 支援ボタン（共通 support.js）: 低い横長画面では下が切れるので、この画面だけ一回り小さく */
+@media (max-height:420px) and (orientation:landscape){#tmSupport{min-height:34px!important;margin-top:2px!important;font-size:13px!important}}
 </style>
 </head>
 <body>
@@ -410,6 +412,6 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 <script src="sound.js?v=11"></script>
 <script src="data.js?v=11"></script>
 <script src="game.js?v=11"></script>
-<script src="support.js?v=1" data-ja="トマト" data-en="a tomato"></script>
+<script src="support.js?v=2" data-ja="トマト" data-en="a tomato"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 // SNS用サムネ og.png（1200x630）。node og.mjs
 // 左にトマトを投げられるマネキン、右にタイトルと、辛口JKの点と一言
+import './mute-auto.mjs'  // テスト中は絶対に音を出さない（playwright を無音に差し替え）
 import { chromium } from 'playwright'
 import { spawn } from 'node:child_process'
 import { MUTE_LAUNCH, muteContext } from './mute.mjs'
