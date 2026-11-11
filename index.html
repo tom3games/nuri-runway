@@ -57,7 +57,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 @keyframes cheer{to{transform:translateY(-6px)}}
 
 /* ---------- 共通 */
-.view{height:100svh;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:max(64px,calc(env(safe-area-inset-top) + 56px)) 16px max(24px,calc(env(safe-area-inset-bottom) + 16px));gap:16px}
+.view{height:100svh;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:max(64px,calc(env(safe-area-inset-top) + 56px)) 16px max(24px,calc(calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)) + 16px));gap:16px}
 .wrap{width:min(540px,100%);display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.8vh,16px);min-height:0;max-height:100%}
 .view:not([hidden]) .wrap{animation:enter .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -107,7 +107,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 @keyframes spin{0%{transform:translateY(-6px);opacity:.4}50%{opacity:1}100%{transform:translateY(6px);opacity:.4}}
 
 /* ---------- ぬり画面（キャンバスを最大に。道具は下の1行、選ぶ時だけ開く） */
-#vPaint{padding:max(52px,calc(env(safe-area-inset-top) + 48px)) 8px max(8px,calc(env(safe-area-inset-bottom) + 6px));gap:6px;height:100svh;min-height:0}
+#vPaint{padding:max(52px,calc(env(safe-area-inset-top) + 48px)) 8px max(8px,calc(calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)) + 6px));gap:6px;height:100svh;min-height:0}
 .pGrid{width:100%;max-width:1100px;flex:1;min-height:0;display:grid;gap:6px;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"head" "canvas" "parts" "tbar"}
 .pLeft,.pSide{display:contents}
 .pHead{grid-area:head;display:flex;align-items:center;gap:4px 8px;justify-content:center;flex-wrap:wrap;text-align:center}
@@ -135,7 +135,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 #bRunway{flex:1;min-width:0;min-height:52px;font-size:16px;letter-spacing:.02em;padding:0 8px;gap:4px;white-space:nowrap}
 #bRunway svg{width:20px;height:20px}
 /* 選ぶ時だけ開くパネル */
-.pop{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(8px,env(safe-area-inset-bottom) + 6px) + 64px);z-index:40;width:min(440px,calc(100vw - 16px));background:rgba(32,14,44,.96);border-radius:18px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,246,238,.18);display:flex;flex-direction:column;gap:8px;animation:popIn .16s ease-out}
+.pop{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(8px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)) + 6px) + 64px);z-index:40;width:min(440px,calc(100vw - 16px));background:rgba(32,14,44,.96);border-radius:18px;padding:10px;box-shadow:0 12px 30px rgba(0,0,0,.5),inset 0 0 0 2px rgba(255,246,238,.18);display:flex;flex-direction:column;gap:8px;animation:popIn .16s ease-out}
 @keyframes popIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .pop .tg{display:flex;gap:6px;justify-content:center}
 .tool{flex:1;max-width:96px;height:54px;border-radius:12px;border:0;background:rgba(255,246,238,.08);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:900;gap:2px;color:var(--paper);padding:0 2px}
@@ -146,7 +146,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .sw{width:100%;aspect-ratio:1;border-radius:50%;border:3px solid rgba(255,255,255,.25);cursor:pointer;position:relative;max-width:46px;justify-self:center}
 .sw.on{border-color:#fff;box-shadow:0 0 0 3px var(--pink)}
 .sw.on::after{content:"";position:absolute;inset:30%;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 0 2px rgba(0,0,0,.25)}
-@media (max-height:700px){.pHead .kw{display:none}.tb{width:46px;height:46px}#bRunway{min-height:46px;font-size:15px}.pop{bottom:calc(max(8px,env(safe-area-inset-bottom) + 6px) + 58px)}}
+@media (max-height:700px){.pHead .kw{display:none}.tb{width:46px;height:46px}#bRunway{min-height:46px;font-size:15px}.pop{bottom:calc(max(8px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)) + 6px) + 58px)}}
 @media (max-width:370px){.tb{width:44px}#bRunway span{font-size:14px}}
 /* 横持ち・PC: 右に細いパネル（パーツと道具）。キャンバスは高さいっぱい */
 @media (min-aspect-ratio:1/1) and (min-width:560px){
@@ -179,7 +179,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 #mc{position:absolute;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));width:min(calc(100vw - 130px),440px);display:flex;gap:8px;align-items:flex-start;transition:opacity .3s}
 #mc .mcFace{flex:none;width:46px;height:46px}
 #mc .bubble{font-size:15px}
-#judges{position:absolute;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(96vw,720px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
+#judges{position:absolute;left:50%;bottom:max(12px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)));transform:translateX(-50%);width:min(96vw,720px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;transition:transform .45s cubic-bezier(.2,.8,.2,1),opacity .3s}
 #judges.off{transform:translate(-50%,130%);opacity:0;visibility:hidden;transition:transform .45s,opacity .3s,visibility 0s .45s}
 .jc{background:rgba(26,11,36,.82);border-radius:14px;padding:8px 6px 10px;text-align:center;box-shadow:inset 0 0 0 2px rgba(255,246,238,.22);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .jc .face{width:min(52px,11vw);height:min(52px,11vw);margin:0 auto}
@@ -194,7 +194,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 #totalBox .t1{font-weight:900;font-size:18px;text-shadow:0 2px 6px #000}
 #totalBox .t2{font-family:var(--disp);font-size:clamp(70px,22vw,130px);line-height:1;color:#fff;text-shadow:0 6px 0 var(--pink-dk),0 0 30px rgba(255,79,154,.8)}
 @media (max-height:500px) and (min-aspect-ratio:1/1){
-  #judges{left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));transform:none;width:190px;grid-template-columns:1fr;gap:4px}
+  #judges{left:auto;right:max(10px,env(safe-area-inset-right));bottom:max(8px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)));transform:none;width:190px;grid-template-columns:1fr;gap:4px}
   #judges.off{transform:translateX(130%)}
   .jc{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:6px;padding:3px 10px 3px 6px;text-align:left}
   .jc .face{width:34px;height:34px;margin:0}
@@ -215,7 +215,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 #bSkip{position:absolute;right:max(12px,env(safe-area-inset-right));top:max(58px,calc(env(safe-area-inset-top) + 52px));width:auto;min-height:40px;font-size:14px;padding:0 14px;z-index:3}
 
 /* 結果 */
-#result{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:16px 16px max(16px,env(safe-area-inset-bottom));background:linear-gradient(transparent 20%,rgba(18,6,26,.85) 62%);overflow-y:auto}
+#result{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:16px 16px max(16px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)));background:linear-gradient(transparent 20%,rgba(18,6,26,.85) 62%);overflow-y:auto}
 #result .wrap{gap:10px;margin-top:auto}
 #rowB .btn{font-size:15px;padding:0 8px}
 @media (max-height:700px) and (max-aspect-ratio:1/1){#result .cm{padding:6px 8px}#result .cm .face{width:34px;height:34px}#result .cm p{font-size:12px;line-height:1.45}#result .stamp{font-size:min(11vw,7vh)}#result .btn{min-height:44px}#result .btn.pink{min-height:48px}}
@@ -249,7 +249,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 .modal .btn.ghost{color:var(--ink);background:transparent;box-shadow:inset 0 0 0 2px rgba(29,20,36,.3)}
 /* 背の低い横画面: 2列に組んで一画面に収める */
 @media (max-height:560px) and (min-aspect-ratio:1/1){
-  .view{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .view{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(10px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)))}
   #vTitle .wrap{width:min(860px,100%);height:100%;display:grid;grid-template-columns:minmax(0,.8fr) 1fr;grid-template-rows:minmax(0,1fr) auto auto auto auto minmax(0,1fr);gap:8px 20px;align-items:center}
   #vTitle .heroBox{grid-column:1;grid-row:1/7;height:100%;min-height:0;overflow:hidden}
   #vTitle .logo{grid-column:2;grid-row:2;padding-right:100px}
@@ -278,7 +278,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   #result .cm .face{width:34px;height:34px}
   #result .cm p{font-size:11px;line-height:1.4}
   #result .wrap{gap:6px 12px}
-  #result{padding-top:max(46px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom))}
+  #result{padding-top:max(46px,env(safe-area-inset-top));padding-bottom:max(8px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)))}
   #result .btn{min-height:40px}
   #result .btn.pink{min-height:42px}
 }
@@ -295,7 +295,7 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
   .btn{min-height:48px}
   .btn.ghost{min-height:44px}
 }
-#tut{background:rgba(10,4,16,.35);align-items:flex-end;padding-bottom:max(16px,env(safe-area-inset-bottom))}
+#tut{background:rgba(10,4,16,.35);align-items:flex-end;padding-bottom:max(16px,calc(env(safe-area-inset-bottom) + var(--inapp-bot,0px)))}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--paper);color:var(--ink);font-weight:900;padding:10px 18px;border-radius:99px;z-index:70;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 #boot-err{position:fixed;inset:auto 8px 8px 8px;z-index:99;background:#fff;color:#b00;font:12px/1.4 monospace;white-space:pre-wrap;padding:10px;border-radius:8px}
 @media (prefers-reduced-motion:reduce){#stage .beam,body.party #stage .crowd{animation:none}}
@@ -414,6 +414,6 @@ body.party #stage .crowd{animation:cheer .35s ease-in-out infinite alternate}
 <script src="sound.js?v=11"></script>
 <script src="data.js?v=11"></script>
 <script src="game.js?v=11"></script>
-<script src="support.js?v=4" data-ja="トマト" data-en="a tomato"></script>
+<script src="support.js?v=5" data-ja="トマト" data-en="a tomato"></script>
 </body>
 </html>
